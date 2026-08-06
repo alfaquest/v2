@@ -50,6 +50,13 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#colourLegend')).toBeVisible();
   });
 
+  test('scoring modal documents letter-weighted position bonus', async ({ page }) => {
+    await page.locator('#scoringInfoLink').click();
+    await expect(page.locator('#scoringModal')).toBeVisible();
+    await expect(page.locator('#scoringModal')).toContainText(/letter tier/i);
+    await expect(page.locator('#scoringModal')).toContainText(/35,500/);
+  });
+
   test('country input has mobile keyboard attributes', async ({ page }) => {
     const input = page.locator('#countryInput');
     await expect(input).toHaveAttribute('autocomplete', 'off');

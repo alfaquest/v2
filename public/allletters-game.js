@@ -75,17 +75,17 @@ function normalize(s){ return String(s||'').trim().toLowerCase(); }
 const API_BASE = (typeof window !== 'undefined' && typeof window.ALFA_API_BASE === 'string')
   ? window.ALFA_API_BASE.replace(/\/+$/, '')
   : '';
-const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v5';
-const ALFA_SCORING_VERSION = 'v5_position_tuned';
+const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v6';
+const ALFA_SCORING_VERSION = 'v6_letter_weighted_position';
 const ALFA_RATING_TIERS = Object.freeze([
-  { min: 29000, label: 'Legendary' },
-  { min: 27500, label: 'Excellent' },
-  { min: 26000, label: 'Very good' },
-  { min: 25000, label: 'Good' },
-  { min: 24000, label: 'Fair' },
+  { min: 35500, label: 'Legendary' },
+  { min: 34000, label: 'Excellent' },
+  { min: 33500, label: 'Very good' },
+  { min: 33000, label: 'Good' },
+  { min: 31500, label: 'Fair' },
   { min: 0, label: 'Completed' }
 ]);
-const ALFA_POSITION_BONUS_PER_MOVE = 50;
+const ALFA_POSITION_LETTER_DIVISOR = 4;
 const ALFA_TIME_TARGET_PER_MOVE_SECONDS = 12;
 const ALFA_TIME_TARGET_MIN_SECONDS = 120;
 const ALFA_TIME_FACTOR_MIN = 0.90;
@@ -129,12 +129,19 @@ function isAlfaScoringMode(){
   return isAlfaMode();
 }
 
+function getPositionBonus(firstCh, moveNumber){
+  if (moveNumber <= 0) return 0;
+  const tier = (firstCh && LETTER_SCORES[firstCh]) ? LETTER_SCORES[firstCh] : 100;
+  return Math.round(moveNumber * tier / ALFA_POSITION_LETTER_DIVISOR);
+}
+
 function scoreWord(word, moveNumber){
   const n = normalize(word);
-  // First letter scores its base tier value
   const firstCh = n.charAt(0);
-  const firstLetterScore = (firstCh && LETTER_SCORES[firstCh]) ? (LETTER_SCORES[firstCh] * ALFA_LETTER_SCORE_MULTIPLIER) : 0;
-  const positionBonus = moveNumber > 0 ? moveNumber * ALFA_POSITION_BONUS_PER_MOVE : 0;
+  const firstLetterScore = (firstCh && LETTER_SCORES[firstCh])
+    ? (LETTER_SCORES[firstCh] * ALFA_LETTER_SCORE_MULTIPLIER)
+    : 0;
+  const positionBonus = getPositionBonus(firstCh, moveNumber);
   return firstLetterScore + positionBonus;
 }
 
