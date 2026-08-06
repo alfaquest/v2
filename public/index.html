@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alfaword.games | Choose a Game</title>
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:28px;background:#071023;color:#e6eef6}
+    .menu{max-width:600px;margin:0 auto}
+    a.button{display:inline-block;margin:8px 0;padding:12px 16px;background:linear-gradient(145deg,#183a87,#0f2459 58%,#0a183f);color:#f4fbff;text-decoration:none;border-radius:10px;border:1px solid rgba(149,205,255,0.55);font-weight:700;letter-spacing:0.01em;text-shadow:0 1px 0 #18366f,0 2px 0 #112852,0 6px 12px rgba(0,0,0,0.45);box-shadow:0 10px 22px rgba(7,14,45,0.48),0 0 0 1px rgba(255,255,255,0.08) inset;transition:transform .18s ease,box-shadow .2s ease,filter .2s ease,border-color .2s ease}
+    a.button:hover{transform:translateY(-2px);border-color:rgba(173,225,255,0.92);box-shadow:0 14px 28px rgba(5,11,38,0.6),0 0 16px rgba(88,178,255,0.35);filter:saturate(1.08) brightness(1.05)}
+    a.button:active{transform:translateY(0);box-shadow:0 6px 14px rgba(5,11,38,0.55),0 0 8px rgba(88,178,255,0.25)}
+    a.button:focus-visible{outline:2px solid #78d5ff;outline-offset:2px}
+    .brand-hero{position:relative;padding:16px 20px 20px;border:1px solid rgba(145,194,255,0.38);border-radius:16px;background:radial-gradient(circle at 18% 30%,rgba(99,218,255,0.26),transparent 44%),radial-gradient(circle at 84% 18%,rgba(255,130,69,0.28),transparent 40%),linear-gradient(140deg,rgba(25,48,110,0.45),rgba(18,28,68,0.6));box-shadow:0 12px 30px rgba(4,10,34,0.55),inset 0 0 0 1px rgba(255,255,255,0.07)}
+    .brand-title{position:relative;z-index:2;margin:0;display:block;white-space:nowrap;font-family:"Trebuchet MS","Verdana",sans-serif;font-size:clamp(1.35rem,5.2vw,3.3rem);line-height:1.02;letter-spacing:0.01em;text-transform:lowercase;text-shadow:0 2px 0 #17346c,0 4px 0 #10274f,0 10px 18px rgba(0,0,0,0.4)}
+    .brand-tagline{position:relative;z-index:2;display:block;width:100%;margin:10px 0 0;padding-right:6px;font-size:0.8rem;font-style:italic;letter-spacing:0.03em;color:#d7eeff;text-align:right;text-shadow:0 1px 0 rgba(9,28,66,0.9),0 4px 10px rgba(5,12,36,0.55);opacity:0.92}
+    .brand-title .word-a{color:#8de6ff}
+    .brand-title .word-b{color:#ffc38b}
+    .brand-title .dot{color:#ffe894;animation:dotPulse 1.8s ease-in-out infinite}
+    .brand-ornament{pointer-events:none;position:absolute;inset:0;overflow:hidden;border-radius:14px}
+    .rocket,.ship{position:absolute;display:block;width:42px;height:18px;border-radius:999px;opacity:0.95}
+    .rocket{top:16px;left:-52px;background:linear-gradient(90deg,#ebf8ff,#89deff);transform:rotate(-8deg);animation:flyAcross 6.4s linear infinite;filter:drop-shadow(0 0 10px rgba(129,220,255,0.7))}
+    .ship{bottom:12px;right:-62px;background:linear-gradient(90deg,#ffdcb8,#ff9954);transform:rotate(10deg);animation:flyAcrossReverse 8.3s linear infinite;filter:drop-shadow(0 0 10px rgba(255,163,90,0.58))}
+    .rocket:before,.ship:before{content:"";position:absolute;right:-10px;top:50%;transform:translateY(-50%);border-left:11px solid currentColor;border-top:8px solid transparent;border-bottom:8px solid transparent;color:inherit}
+    .rocket:after,.ship:after{content:"";position:absolute;left:-18px;top:50%;transform:translateY(-50%);width:16px;height:6px;border-radius:999px;background:linear-gradient(90deg,rgba(255,165,0,0),rgba(255,228,170,0.95))}
+    .ship:before{right:auto;left:-10px;border-left:none;border-right:11px solid #ffb16f}
+    .ship:after{left:auto;right:-18px;background:linear-gradient(90deg,rgba(255,228,170,0.95),rgba(255,165,0,0))}
+    .planet{position:absolute;border-radius:50%;box-shadow:inset -4px -6px 10px rgba(0,0,0,0.25),0 0 14px rgba(120,180,255,0.35)}
+    .planet.p1{width:18px;height:18px;right:22px;top:16px;background:linear-gradient(130deg,#7fc8ff,#2f4ee3)}
+    .planet.p2{width:12px;height:12px;left:22px;bottom:8px;background:linear-gradient(130deg,#ffd7a8,#ff7f48)}
+    p.lead{color:#9aa6b2}
+    .game-category{display:inline-flex;align-items:center;gap:10px;margin-top:10px;margin-bottom:16px;padding:7px 12px;border-radius:999px;color:#d5e9ff;background:linear-gradient(120deg,rgba(24,55,122,0.52),rgba(12,31,81,0.68));border:1px solid rgba(131,186,255,0.38);box-shadow:0 8px 20px rgba(6,14,40,0.4)}
+    .game-category-label{font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;color:#9ec6ff}
+    .game-category-value{font-size:0.94rem;color:#f2f7ff;font-weight:700}
+    .earth{position:relative;display:inline-block;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#7dd3fc 0%,#2563eb 58%,#0d1b4c 100%);box-shadow:inset -3px -5px 8px rgba(4,9,31,0.5),0 0 10px rgba(81,170,255,0.45);overflow:hidden;flex-shrink:0;margin-left:auto}
+    .earth:before{content:"";position:absolute;top:3px;left:-14px;width:50px;height:16px;border-radius:999px;background:radial-gradient(circle at 16% 52%,rgba(143,246,167,0.95) 0 16%,transparent 19%),radial-gradient(circle at 44% 36%,rgba(110,228,137,0.9) 0 18%,transparent 21%),radial-gradient(circle at 72% 62%,rgba(124,233,150,0.9) 0 17%,transparent 20%);animation:earthSpin 6.2s linear infinite}
+    .card{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;margin:12px 0}
+    @keyframes flyAcross{0%{transform:translateX(0) rotate(-8deg)}100%{transform:translateX(700px) rotate(-8deg)}}
+    @keyframes flyAcrossReverse{0%{transform:translateX(0) rotate(12deg)}100%{transform:translateX(-700px) rotate(12deg)}}
+    @keyframes dotPulse{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+    @keyframes earthSpin{0%{transform:translateX(0)}100%{transform:translateX(-20px)}}
+    @media(max-width:600px){body{padding:16px}a.button{width:100%;display:block}.brand-hero{padding:12px 14px 14px}.brand-title{font-size:1.95rem;line-height:1.05}.brand-tagline{margin-top:8px;padding-right:4px;font-size:0.73rem;letter-spacing:0.02em}.rocket,.ship{width:32px;height:14px}.planet.p1{right:14px;top:12px}.planet.p2{left:14px;bottom:6px}.game-category{margin-top:8px;padding:6px 10px}.game-category-value{font-size:0.88rem}}
+    @media(max-width:430px){.brand-title{font-size:1.52rem;letter-spacing:0.005em}.brand-tagline{font-size:0.68rem;letter-spacing:0.015em}.game-category{display:flex;width:calc(100% - 16px);margin-left:8px;margin-right:8px;gap:8px}.game-category-label{font-size:0.74rem}.game-category-value{font-size:0.84rem}}
+    @media (prefers-reduced-motion: reduce){.earth:before{animation:none}}
+  </style>
+</head>
+<body>
+  <div class="menu">
+    <div class="brand-hero" aria-label="alfaword.games">
+      <h1 class="brand-title"><span class="word-a">alfaword</span><span class="dot">.</span><span class="word-b">games</span></h1>
+      <p class="brand-tagline">providing word games beyond your wildest dreams</p>
+      <div class="brand-ornament" aria-hidden="true">
+        <span class="rocket"></span>
+        <span class="ship"></span>
+        <span class="planet p1"></span>
+        <span class="planet p2"></span>
+      </div>
+    </div>
+    <p class="lead game-category"><span class="game-category-label">Game category:</span> <strong class="game-category-value">Countries of the World</strong><span class="earth" aria-hidden="true"></span></p>
+    <p class="lead" style="margin-top:2px;font-size:0.84rem;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#f2cd72;text-shadow:0 2px 10px rgba(14,35,78,0.35)">Choose a game</p>
+    <div class="card">
+      <strong>Alfaquest</strong>
+      <div><a class="button" href="alfaquest.html">Play Alfaquest</a></div>
+      <small style="color:#9aa6b2">Play the unique sequencing game.</small>
+    </div>
+    <div class="card">
+      <strong>Alfafill</strong>
+      <div><a class="button" href="alfafilleasy.html">Play Alfafill - Easy mode</a></div>
+      <small style="color:#9aa6b2;display:block">Free order play: submit valid countries to collect letters in any sequence.</small>
+      <div><a class="button" href="alfafillnormal.html">Play Alfafill - Normal mode</a></div>
+      <small style="color:#9aa6b2;display:block">Progressive challenge: build A-Z coverage using Alfaquest style logic</small>
+      <div><a class="button" href="alfafillhard.html">Play Alfafill - Hard mode</a></div>
+      <small style="color:#9aa6b2;display:block">Strict sequence + full collection: complete all letters while avoiding dead-end moves.</small>
+    </div>
+    <div style="margin-top:18px;color:#7f8c95;font-size:0.9rem">The games are separate pages with improved UI. Open them in the same tab or new tab as you prefer.</div>
+    <div style="margin-top:36px;padding-top:18px;border-top:1px solid #1e2a3a;color:#6b7681;font-size:0.85rem;text-align:center">
+      © 2026 alfaword.games / Alfaquest / Alfafill. All rights reserved. Created by Jude Shiels. Drakopoulos Games.
+    </div>
+  </div>
+  <script src="scripts/starfield-bg.js"></script>
+</body>
+</html>

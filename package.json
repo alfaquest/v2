@@ -1,0 +1,17 @@
+{
+  "name": "alfaquest-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "alfaword.games — Alfaquest & Alfafill",
+  "scripts": {
+    "serve": "serve public -l 4173",
+    "test": "playwright test",
+    "test:regression": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "serve": "^14.2.4"
+  }
+}

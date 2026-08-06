@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Alfafill Easy | alfaword.games</title>
+  <style>
+    :root{
+      --bg:#0f1724; --panel:#0b1220; --muted:#9aa6b2; --accent:#00a3ff; --success:#22c55e; --danger:#ff5c6c;
+      --card:#0f1727; --glass: rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body {
+      font-family: Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      margin:0; padding:28px; background:linear-gradient(180deg,#071023 0%, #071827 100%); color:#e6eef6;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    .container{max-width:1100px;margin:0 auto}
+    h1{margin:0 0 12px;font-weight:700;letter-spacing:0.01em;font-size:clamp(1.5rem,3vw,2.2rem);color:#cbe7ff;text-shadow:0 2px 0 #17346c,0 4px 0 #10274f,0 10px 18px rgba(0,0,0,0.4)}
+    .controls{display:flex;gap:12px;align-items:center;margin:12px 0}
+    input[type="number"], input[type="text"]{padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:16px}
+    #countryInput{width:100%;max-width:420px;flex:0 1 420px;font-size:24px !important;line-height:1.3}
+    #countryInput::placeholder{font-size:24px}
+    button{background:var(--accent);color:#021023;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .game-row{display:flex;gap:12px;align-items:center;margin-top:16px}
+    .letter-grid{display:grid;grid-template-columns:repeat(13, 1fr);gap:6px;margin-top:12px}
+    .letter-cell{background:rgba(255,255,255,0.03);padding:10px;border-radius:6px;text-align:center;font-weight:700;color:var(--muted)}
+    .letter-cell.unrevealed{opacity:0.35;border:1px dashed rgba(255,255,255,0.15)}
+    .letter-cell.used{background:var(--success);color:#021023}
+    .letter-cell.start-used{background:#ffb86c;color:#021023}
+    .letter-cell.next-required{background:linear-gradient(135deg,#fde047,#f59e0b);color:#1a1202;font-weight:900;border:2px solid #fef08a;box-shadow:0 0 0 2px rgba(253,224,71,0.3),0 0 16px rgba(245,158,11,0.55);opacity:1}
+    .hl{color:var(--accent);font-weight:700}
+    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#6ee7ff)}
+    #submittedList{margin:8px 0;padding-left:18px}
+    .footer-note{margin-top:18px;color:var(--muted);font-size:0.9rem}
+    .status-warning{color:#ffd966;font-weight:600}
+    .status-danger{color:var(--danger);font-weight:700}
+    @media (max-width: 800px){
+      body{padding:12px}
+      .container{max-width:100%;padding:0}
+      .controls{flex-direction:column;align-items:stretch}
+      .game-row{flex-direction:column;align-items:stretch}
+      input#countryInput{width:100%;max-width:260px;font-size:16px !important;line-height:16px;height:34px !important;min-height:34px;max-height:34px;padding:4px 8px;box-sizing:border-box;appearance:none;-webkit-appearance:none;margin-bottom:8px}
+      #countryInput::placeholder{font-size:16px}
+      button{width:100%}
+      .letter-grid{grid-template-columns:repeat(7, 1fr)}
+      .letter-cell{padding:8px;font-size:0.85rem}
+      .progress{height:8px}
+      #submittedList{max-height:220px;overflow:auto}
+    }
+  </style>
+</head>
+<body>
+  <h1>Alfafill - Easy mode</h1>
+  <p>Add valid country names in any order to fill A-Z.</p>
+  <div class="controls">
+    <div style="flex:1">
+      <em>Easy mode: no starting-letter order rule.</em>
+    </div>
+    <div style="margin-left:auto"><span id="status"></span></div>
+  </div>
+  <hr />
+  <h2>Play: Alfafill - Easy mode</h2>
+  <div class="instructions" style="margin-bottom:10px;color:var(--muted)">
+    <strong>How to play:</strong> Submit country names in any order. Each valid submission that adds at least one new letter advances your progress toward covering A-Z.
+    <div><strong>Objective:</strong> Cover A-Z using the fewest countries possible.</div>
+  </div>
+  <div class="game-row">
+    <input id="countryInput" placeholder="Type a country name..." />
+    <button id="submitCountry">Submit</button>
+    <button id="resetLocal" class="ghost">Reset</button>
+  </div>
+  <div class="game-row">
+    <div style="flex:1">
+      <div class="letter-grid" id="letterGrid"></div>
+      <div class="progress"><i id="progressBar" style="width:0%"></i></div>
+    </div>
+    <div style="width:320px">
+      <div><strong>Remaining letters:</strong> <span id="remainingLetters">26</span></div>
+      <div id="scorePanel" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.03)">
+        <div><strong>Current score rating:</strong> <span id="scoreRating">Legendary</span></div>
+        <div style="margin-top:4px;color:var(--muted);font-size:0.9rem"><span id="scoreMoves">0 countries used</span></div>
+        <div style="margin-top:10px;color:var(--muted);font-size:0.85rem;line-height:1.5">
+          <div><strong style="color:#e6eef6">Rating guide</strong></div>
+          <div>6 or fewer: Legendary</div>
+          <div>7: Excellent</div>
+          <div>8: Very good</div>
+          <div>9: Good</div>
+          <div>10: Fair</div>
+          <div>11+: Keep Trying</div>
+        </div>
+      </div>
+      <div style="margin-top:8px"><span id="sessionInfo"></span></div>
+      <div class="footer-note">Submitted countries:</div>
+      <ul id="submittedList"></ul>
+    </div>
+  </div>
+  <p style="margin:18px 0 0"><a href="index.html" style="color:#7dd3fc;text-decoration:none">&larr; Return to main menu</a></p>
+  <script>
+    window.ALFA_API_BASE = (location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+      ? ''
+      : 'https://alfaquest-worker.judejs.workers.dev';
+  </script>
+  <script src="scripts/starfield-bg.js"></script>
+  <script>window.ALFAFILL_EASY_MODE = true;</script>
+  <script src="allletters-game.js"></script>
+</body>
+</html>

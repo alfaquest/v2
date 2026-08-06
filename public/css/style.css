@@ -1,0 +1,352 @@
+body {
+    padding: 10px;
+    background-color: #030300;
+    /*background-image: url(../images/world2.jpg);*/
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+ 
+h1 {
+    color: cyan;
+    font: 36px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:17%;
+    left: 20px;
+    text-align: left;
+}
+
+h4 {
+  color: #ebe707;
+  font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;
+  left: 250px;
+  width:12%;
+  text-align: left;
+  margin-top: 20%;
+}
+
+h5 {
+    color: #29ee06;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;
+    left: 250px; 
+    text-align: left;   
+}
+
+p {
+  color: #ebe707;
+    font: 22px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:85%;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+}
+
+#intro {
+  color: #ebe707;
+    font: 20px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:85%;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+}
+
+#next {
+  color: cyan;
+  font: 20px "Lucida Grande", Helvetica, Arial, sans-serif;  
+  width:75%;
+  text-align: left;
+  transform: translateY(500%);
+}
+
+#used {
+  color: cyan;
+    font: 20px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:75%;
+    text-align: left;
+    transform: translateY(500%);
+
+}
+
+@media only screen and (max-width: 600px) {
+  #next {
+    color: cyan;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:90%;
+    text-align: left;
+    transform: translateY(500%);
+  }
+}
+
+
+@media only screen and (max-width: 600px) {
+#used {
+  color: cyan;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:100%;
+    text-align: left;
+    transform: translateY(500%);
+
+  }
+}
+
+#restart {
+  color: cyan;
+    font: 17px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    -webkit-text-stroke-width: 0.2px;
+    -webkit-text-stroke-color: black;
+    background: rgba(2, 51, 2, 0.3);
+    background-size: auto;
+    width: 15%;
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+    /*transform: translateY(1020%);*/
+
+}
+
+#fourhundred {
+  color: red;
+    font: 30px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:90%;
+    text-align: left;
+    transform: translateY(-25%);
+  }
+
+  #fourhundredfour {
+    color: red;
+    font: 30px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:90%;
+    text-align: left;
+    transform: translateY(-25%);
+  }
+
+  #twohundred {
+    color: rgb(26, 248, 6);
+    font: 28px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:80%;
+    text-align: left;
+    transform: translateY(-15%);
+  }
+
+  #twohundredone {
+    color: rgb(219, 10, 247);
+    font: 32px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    width:60%;
+    text-align: left;
+    transform: translateY(-25%);
+  }
+
+
+
+input {
+    font: 22px "Lucida Grande", Helvetica, Arial, sans-serif;
+    position: absolute;
+    display: block;
+    border: 2px solid #1e07e6;
+    border-radius: 5px;
+    width: 350px;
+    max-width: calc(100% - 20px);
+    text-align: left;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+input::placeholder {
+    font: 18px "Lucida Grande", Helvetica, Arial, sans-serif;
+    text-align: left;
+  }
+
+button {
+    font: 30px "Lucida Grande", Helvetica, Arial, sans-serif;
+    border-radius: 12px;
+    display: block;
+    position: absolute;
+
+    transform: translateY(120%);
+    width: 160px;
+    border: 1px solid #73AD21;
+    text-align: left; 
+}
+
+@media only screen and (max-width: 600px) {
+  p {
+    color: #ebe707;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:85%;
+    text-align: left;
+    margin: 5px;
+    padding: 0;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  #intro {
+    color: #ebe707;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width:85%;
+    text-align: left;
+    margin: 5px;
+    padding: 0;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  button {
+      width: 130px;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  #restart {
+      width: 130px;
+      margin: 0;
+      padding: 0px;
+  }
+}
+
+@media only screen and (max-width: 800px) {
+  input {
+    font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+    position: absolute;
+    display: block;
+    border: 2px solid #95bf47;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 220px;
+    border: 1px solid #1e07e6;
+    text-align: left;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  input {
+    font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+    max-width: 100%;
+    padding: 6px;
+  }
+  
+  input::placeholder {
+    font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+  }
+}
+
+button:hover {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+button:focus {
+  background: rgb(236, 236, 243);
+}
+
+input:hover {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+input:focus {
+  background: rgb(236, 236, 243);
+}
+
+a {
+  color: cyan ;
+}
+
+a:link {
+  color: cyan ;
+}
+
+a:visited {
+  color: cyan ;
+}
+
+#help{
+  color: cyan;
+    font: 17px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    -webkit-text-stroke-width: 0.2px;
+    -webkit-text-stroke-color: black;
+    background: rgba(2, 51, 2, 0.3);
+    background-size: auto;
+    width: 15%;
+    text-align: center;
+    margin: 0;
+    padding: 4px;
+}
+
+#source{
+  color: cyan;
+    font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    -webkit-text-stroke-width: 0.2px;
+    -webkit-text-stroke-color: black;
+    background: rgba(2, 51, 2, 0.3);
+    background-size: auto;
+    width: 15%;
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+}
+
+#aqvai{
+  color: cyan;
+    font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;  
+    -webkit-text-stroke-width: 0.2px;
+    -webkit-text-stroke-color: black;
+    background: rgba(2, 51, 2, 0.3);
+    background-size: auto;
+    width: 32%;
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+}
+
+@media only screen and (max-width: 600px) {
+  #help {
+      width: 130px;
+      margin: 0;
+      padding: 0px;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  #source {
+      width: 130px;
+      margin: 0;
+      padding: 0px;
+  }
+}
+
+@media only screen and (max-width: 1800px) {
+  #aqvai {
+      width: 300px;
+      margin: 0;
+      padding: 0px;
+  }
+}
+
+
+.footer {
+  left: 0;
+  bottom: 0;
+  width: 70%;
+  display: block;
+  text-align: left;
+}
+
+.wrapper {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blink {
+  animation: blinker 1s step-start infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}

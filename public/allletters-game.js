@@ -1,0 +1,1271 @@
+// allletters-game.js
+// Client-side interactive game: submit country names to collect all a-z letters.
+
+const COUNTRY_LIST = (function(){
+  const orig = [
+"Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+"Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas",
+"Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+"Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso",
+"Burundi","Cambodia","Cameroon","Canada","Cape Verde","Central African Republic","Chad",
+"Chile","China","Colombia","Comoros","Republic of the Congo","Democratic Republic of the Congo",
+"Costa Rica","Croatia","Cuba","Cyprus","Czechia","Denmark","Djibouti","Dominica","Dominican Republic",
+"East Timor","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia",
+"Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala",
+"Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran",
+"Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan","Kazakhstan","Kenya",
+"Kiribati","North Korea","South Korea","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon",
+"Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","North Macedonia","Madagascar",
+"Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius",
+"Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique",
+"Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria",
+"Norway","Oman","Pakistan","Palestine","Palau","Panama","Papua New Guinea","Paraguay","Peru","Philippines",
+"Poland","Portugal","Qatar","Romania","Russia","Rwanda","St Kitts and Nevis","St Lucia","Saint Vincent and the Grenadines",
+"Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone",
+"Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Sudan","Spain",
+"Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand",
+"Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates",
+"United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam",
+"Yemen","Zambia","Zimbabwe"
+  ];
+  if (typeof window !== 'undefined'){
+    window._alfa_country_display = window._alfa_country_display || {};
+    for (const s of orig) window._alfa_country_display[s.toLowerCase()] = s;
+    window._alfa_country_list = orig.map(s => s.toLowerCase());
+    return window._alfa_country_list;
+  }
+  return orig.map(s => s.toLowerCase());
+})();
+
+const ALPH = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const LETTER_SCORES = Object.freeze({
+  a: 100, b: 300, c: 300, d: 200, e: 100, f: 500, g: 300, h: 300, i: 100, j: 500,
+  k: 400, l: 200, m: 200, n: 100, o: 100, p: 300, q: 500, r: 100, s: 200, t: 200,
+  u: 200, v: 400, w: 400, x: 500, y: 400, z: 400
+});
+
+// Game sequencing alphabet: ignore 'w' and 'x' as starting letters per alfaquest rule
+const GAME_ALPH = ALPH.filter(c => c !== 'w' && c !== 'x');
+const IGNORED = ['w','x'];
+
+function isAlfaMode(){
+  return (typeof window !== 'undefined') && window.ALFAQUEST_MODE === true;
+}
+
+function isEasyAlfafillMode(){
+  return !isAlfaMode() && (typeof window !== 'undefined') && window.ALFAFILL_EASY_MODE === true;
+}
+
+function isSequentialAlfafillMode(){
+  return !isAlfaMode() && (typeof window !== 'undefined') && window.ALFAFILL_SEQUENCE_MODE === true;
+}
+
+function isSequentialFullCollectMode(){
+  return !isAlfaMode() && (typeof window !== 'undefined') && window.ALFAFILL_SEQUENCE_FULL_MODE === true;
+}
+
+function isNormalAlfafillMode(){
+  return !isAlfaMode() && !isEasyAlfafillMode() && !isSequentialAlfafillMode() && !isSequentialFullCollectMode();
+}
+
+function normalize(s){ return String(s||'').trim().toLowerCase(); }
+
+// Optional override for API host when pages and worker are on different origins.
+// Example: window.ALFA_API_BASE = 'https://alfaquest-worker.judejs.workers.dev'
+const API_BASE = (typeof window !== 'undefined' && typeof window.ALFA_API_BASE === 'string')
+  ? window.ALFA_API_BASE.replace(/\/+$/, '')
+  : '';
+const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v3';
+const ALFA_SCORING_VERSION = 'v3_million_scale';
+const ALFA_TIME_TARGET_PER_MOVE_SECONDS = 12;
+const ALFA_TIME_TARGET_MIN_SECONDS = 120;
+const ALFA_TIME_FACTOR_MIN = 0.90;
+const ALFA_TIME_FACTOR_MAX = 1.10;
+const ALFA_LETTER_SCORE_MULTIPLIER = 2;
+const ALFA_WEIGHT_LETTERS = 0.60;
+const ALFA_WEIGHT_TIMING = 0.40;
+const ALFA_SPEED_BASELINE_CPS = 2.0;
+const ALFA_SPEED_BONUS_SCALE = 12;
+const ALFA_SPEED_BONUS_PER_COUNTRY_CAP = 15;
+const ALFA_SPEED_BONUS_TOTAL_CAP = 180;
+const ALFA_TIMING_SPEED_SCORE_FACTOR = 100;
+const ALFA_FINAL_SCORE_SCALE = 22;
+
+function apiUrl(path){
+  const p = path.startsWith('/') ? path : ('/' + path);
+  return API_BASE + p;
+}
+
+// Local game state
+let usedLetters = new Set();
+let submitted = [];
+let sessionName = null;
+let usedStarts = new Set();
+let gameOver = false;
+let completionShown = false;
+let completionResetTimer = null;
+let gameOverResetTimer = null;
+let submissionScores = [];
+let scoreDisplayEnabled = false;
+let highScoreRecord = null;
+let runStartedAtMs = null;
+let runEndedAtMs = null;
+let lastRenderedRequiredLetter = null;
+let liveScoreTimerId = null;
+let speedBonuses = [];
+let currentEntryStartedAtMs = null;
+
+function isAlfaScoringMode(){
+  return isAlfaMode();
+}
+
+function scoreWord(word, moveNumber){
+  const n = normalize(word);
+  // First letter scores its base tier value
+  const firstCh = n.charAt(0);
+  const firstLetterScore = (firstCh && LETTER_SCORES[firstCh]) ? (LETTER_SCORES[firstCh] * ALFA_LETTER_SCORE_MULTIPLIER) : 0;
+  const positionBonus = moveNumber > 0 ? moveNumber * 100 : 0;
+  return firstLetterScore + positionBonus;
+}
+
+function getTotalScore(){
+  return getScoreBreakdown().finalScore;
+}
+
+function getRawTotalScore(){
+  return submissionScores.reduce((sum, value) => sum + value, 0);
+}
+
+function getTotalSpeedBonus(){
+  const total = speedBonuses.reduce((sum, value) => sum + value, 0);
+  return clampNumber(total, -ALFA_SPEED_BONUS_TOTAL_CAP, ALFA_SPEED_BONUS_TOTAL_CAP);
+}
+
+function alphaCharCount(s){
+  let count = 0;
+  const n = normalize(s);
+  for (let i = 0; i < n.length; i++){
+    const ch = n.charAt(i);
+    if (ch >= 'a' && ch <= 'z') count++;
+  }
+  return count;
+}
+
+function computeSpeedBonus(word, elapsedMs){
+  const chars = alphaCharCount(word);
+  if (chars <= 0 || !Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
+  const seconds = Math.max(0.2, elapsedMs / 1000);
+  const cps = chars / seconds;
+  const rawBonus = Math.round((cps - ALFA_SPEED_BASELINE_CPS) * ALFA_SPEED_BONUS_SCALE);
+  return clampNumber(rawBonus, -ALFA_SPEED_BONUS_PER_COUNTRY_CAP, ALFA_SPEED_BONUS_PER_COUNTRY_CAP);
+}
+
+function consumeEntryElapsedMs(){
+  if (!Number.isFinite(currentEntryStartedAtMs) || currentEntryStartedAtMs === null) return 0;
+  const elapsed = Math.max(0, Date.now() - currentEntryStartedAtMs);
+  currentEntryStartedAtMs = null;
+  return elapsed;
+}
+
+function clampNumber(value, min, max){
+  return Math.max(min, Math.min(max, value));
+}
+
+function formatElapsedSeconds(totalSeconds){
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return minutes + ':' + String(seconds).padStart(2, '0');
+}
+
+function escapeHtml(s){
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function ensureSessionInfoBadgeStyles(){
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('session-info-badge-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'session-info-badge-styles';
+  style.textContent = '@keyframes reqPulse{0%{transform:scale(1);box-shadow:0 0 12px rgba(245,158,11,0.35)}50%{transform:scale(1.06);box-shadow:0 0 24px rgba(245,158,11,0.72)}100%{transform:scale(1);box-shadow:0 0 12px rgba(245,158,11,0.35)}}.required-pill-pulse{animation:reqPulse 850ms ease-out 1;}';
+  document.head.appendChild(style);
+}
+
+function renderSessionInfo(requiredLetter, statusText, pulseRequired){
+  if (typeof document === 'undefined') return;
+  ensureSessionInfoBadgeStyles();
+  const si = document.getElementById('sessionInfo');
+  if (!si) return;
+
+  const hasSession = !!sessionName;
+  const hasRequired = !!requiredLetter;
+  const hasStatus = !!statusText;
+  if (!hasSession && !hasRequired && !hasStatus) {
+    si.innerHTML = '';
+    return;
+  }
+
+  const pills = [];
+  if (hasSession) {
+    pills.push('<span style="display:inline-block;margin:0 8px 6px 0;padding:3px 9px;border-radius:999px;border:1px solid rgba(125,211,252,0.35);background:rgba(56,189,248,0.12);color:#cbe7ff;font-size:0.8rem;font-weight:700;letter-spacing:0.2px">Session: ' + escapeHtml(sessionName) + '</span>');
+  }
+  if (hasRequired) {
+    const pulseClass = pulseRequired ? ' required-pill-pulse' : '';
+    pills.push('<span class="' + pulseClass.trim() + '" style="display:inline-block;margin:0 8px 6px 0;padding:4px 11px;border-radius:999px;border:1px solid rgba(254,240,138,0.85);background:linear-gradient(135deg,#fde047,#f59e0b);color:#1a1202;font-size:0.82rem;font-weight:900;letter-spacing:0.3px;text-transform:uppercase;box-shadow:0 0 12px rgba(245,158,11,0.35)">Required: ' + escapeHtml(String(requiredLetter).toUpperCase()) + '</span>');
+  }
+  if (hasStatus) {
+    pills.push('<span style="display:inline-block;margin:0 8px 6px 0;padding:3px 9px;border-radius:999px;border:1px solid rgba(148,163,184,0.35);background:rgba(148,163,184,0.12);color:#d1d9e2;font-size:0.8rem;font-weight:700">' + escapeHtml(statusText) + '</span>');
+  }
+
+  si.innerHTML = pills.join('');
+}
+
+function ensureSubmittedLegend(){
+  if (typeof document === 'undefined') return;
+  const listEl = document.getElementById('submittedList');
+  if (!listEl || !listEl.parentNode) return;
+  if (document.getElementById('submittedLegend')) return;
+
+  const legend = document.createElement('div');
+  legend.id = 'submittedLegend';
+  legend.style.margin = '8px 0 8px';
+  legend.style.padding = '8px 10px';
+  legend.style.borderRadius = '10px';
+  legend.style.border = '1px solid rgba(125,211,252,0.18)';
+  legend.style.background = 'rgba(15, 23, 39, 0.5)';
+  legend.style.fontSize = '0.82rem';
+  legend.style.lineHeight = '1.5';
+  legend.innerHTML =
+    '<div style="color:#cbe7ff;font-weight:800;margin-bottom:4px">Letter colour legend</div>' +
+    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle"></span>Green: letter already used before that submission</div>' +
+    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fbbf24;margin-right:6px;vertical-align:middle"></span>Gold: current required letter highlight</div>' +
+    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle"></span>Red: ignored letter (W or X)</div>';
+
+  listEl.parentNode.insertBefore(legend, listEl);
+}
+
+function getElapsedSeconds(){
+  if (runStartedAtMs === null) return 0;
+  const endMs = runEndedAtMs !== null ? runEndedAtMs : Date.now();
+  return Math.max(1, Math.round((endMs - runStartedAtMs) / 1000));
+}
+
+function lockRunEndTime(){
+  if (runStartedAtMs !== null && runEndedAtMs === null) runEndedAtMs = Date.now();
+}
+
+function getTargetSeconds(moveCount){
+  const perMoveTarget = Math.max(0, moveCount) * ALFA_TIME_TARGET_PER_MOVE_SECONDS;
+  return Math.max(ALFA_TIME_TARGET_MIN_SECONDS, perMoveTarget);
+}
+
+function getTimeFactor(elapsedSeconds, targetSeconds){
+  if (elapsedSeconds <= 0 || targetSeconds <= 0) return 1;
+  const ratio = targetSeconds / elapsedSeconds;
+  return clampNumber(ratio, ALFA_TIME_FACTOR_MIN, ALFA_TIME_FACTOR_MAX);
+}
+
+function getScoreBreakdown(){
+  const rawScore = getRawTotalScore();
+  if (!isAlfaScoringMode() || submitted.length === 0 || rawScore <= 0) {
+    return {
+      rawScore,
+      finalScore: rawScore,
+      unscaledFinalScore: rawScore,
+      timeAdjustedScore: rawScore,
+      speedBonus: 0,
+      elapsedSeconds: 0,
+      targetSeconds: 0,
+      timeFactor: 1
+    };
+  }
+
+  const elapsedSeconds = getElapsedSeconds();
+  const targetSeconds = getTargetSeconds(submitted.length);
+  const timeFactor = getTimeFactor(elapsedSeconds, targetSeconds);
+  const timeAdjustedScore = Math.round(rawScore * timeFactor);
+  const speedBonus = getTotalSpeedBonus();
+  const timingScore = timeAdjustedScore + (speedBonus * ALFA_TIMING_SPEED_SCORE_FACTOR);
+  const unscaledFinalScore = Math.round((rawScore * ALFA_WEIGHT_LETTERS) + (timingScore * ALFA_WEIGHT_TIMING));
+  return {
+    rawScore,
+    timeAdjustedScore,
+    timingScore,
+    speedBonus,
+    unscaledFinalScore,
+    finalScore: Math.round(unscaledFinalScore * ALFA_FINAL_SCORE_SCALE),
+    elapsedSeconds,
+    targetSeconds,
+    timeFactor
+  };
+}
+
+function renderAlfaScorePanelMetrics(){
+  if (typeof document === 'undefined') return;
+  const totalScoreEl = document.getElementById('totalScore');
+  const rawScoreEl = document.getElementById('rawScore');
+  const speedBonusEl = document.getElementById('speedBonus');
+  const lastScoreEl = document.getElementById('lastScore');
+  const lastSpeedBonusEl = document.getElementById('lastSpeedBonus');
+  const elapsedTimeEl = document.getElementById('elapsedTime');
+  const timeFactorEl = document.getElementById('timeFactor');
+  const alfaScoreRatingRowEl = document.getElementById('alfaScoreRatingRow');
+  const alfaScoreRatingEl = document.getElementById('alfaScoreRating');
+  if (!totalScoreEl || !lastScoreEl) return;
+
+  const breakdown = getScoreBreakdown();
+  totalScoreEl.textContent = String(breakdown.finalScore);
+  if (rawScoreEl) rawScoreEl.textContent = String(breakdown.rawScore);
+  if (speedBonusEl) speedBonusEl.textContent = String(breakdown.speedBonus);
+  lastScoreEl.textContent = String(submissionScores.length ? submissionScores[submissionScores.length - 1] : 0);
+  if (lastSpeedBonusEl) lastSpeedBonusEl.textContent = String(speedBonuses.length ? speedBonuses[speedBonuses.length - 1] : 0);
+  if (elapsedTimeEl) elapsedTimeEl.textContent = formatElapsedSeconds(breakdown.elapsedSeconds);
+  if (timeFactorEl) timeFactorEl.textContent = 'x' + breakdown.timeFactor.toFixed(2);
+  if (alfaScoreRatingRowEl && alfaScoreRatingEl) {
+    if (isCompletedAlfaRun()) {
+      alfaScoreRatingRowEl.style.display = 'block';
+      alfaScoreRatingEl.textContent = getAlfaScoreRating(breakdown.finalScore);
+    } else {
+      alfaScoreRatingRowEl.style.display = 'none';
+      alfaScoreRatingEl.textContent = '';
+    }
+  }
+}
+
+function shouldRunLiveScoreTimer(){
+  return isAlfaScoringMode() &&
+    scoreDisplayEnabled &&
+    runStartedAtMs !== null &&
+    runEndedAtMs === null &&
+    submitted.length > 0;
+}
+
+function syncLiveScoreTimer(){
+  const shouldRun = shouldRunLiveScoreTimer();
+  if (shouldRun && !liveScoreTimerId){
+    liveScoreTimerId = setInterval(() => {
+      renderAlfaScorePanelMetrics();
+    }, 1000);
+    return;
+  }
+  if (!shouldRun && liveScoreTimerId){
+    clearInterval(liveScoreTimerId);
+    liveScoreTimerId = null;
+  }
+}
+
+function loadHighScore(){
+  try{
+    const raw = localStorage.getItem(ALFA_HIGH_SCORE_KEY);
+    if (!raw) {
+      highScoreRecord = null;
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.completed === true && Number.isFinite(parsed.score) && parsed.score > 0) {
+      highScoreRecord = {
+        version: typeof parsed.version === 'string' ? parsed.version : 'legacy',
+        completed: true,
+        score: Math.floor(parsed.score),
+        rawScore: Number.isFinite(parsed.rawScore) ? Math.floor(parsed.rawScore) : Math.floor(parsed.score),
+        moves: Number.isFinite(parsed.moves) ? Math.floor(parsed.moves) : 0,
+        elapsedSeconds: Number.isFinite(parsed.elapsedSeconds) ? Math.floor(parsed.elapsedSeconds) : 0,
+        timeFactor: Number.isFinite(parsed.timeFactor) ? parsed.timeFactor : 1,
+        achievedAt: typeof parsed.achievedAt === 'string' ? parsed.achievedAt : ''
+      };
+      return;
+    }
+    localStorage.removeItem(ALFA_HIGH_SCORE_KEY);
+  }catch(e){}
+  highScoreRecord = null;
+}
+
+function saveHighScore(){
+  try{
+    if (!highScoreRecord) localStorage.removeItem(ALFA_HIGH_SCORE_KEY);
+    else localStorage.setItem(ALFA_HIGH_SCORE_KEY, JSON.stringify(highScoreRecord));
+  }catch(e){}
+}
+
+function renderHighScore(){
+  if (typeof document === 'undefined') return;
+  const rowEl = document.getElementById('bestScoreRow');
+  const scoreEl = document.getElementById('bestScore');
+  const metaEl = document.getElementById('bestScoreMeta');
+  if (!rowEl || !scoreEl || !metaEl) return;
+  rowEl.style.display = isAlfaMode() ? 'block' : 'none';
+  if (!isAlfaMode()) return;
+  if (highScoreRecord) {
+    scoreEl.textContent = String(highScoreRecord.score);
+    if (highScoreRecord.moves > 0) {
+      const answersLabel = highScoreRecord.moves + (highScoreRecord.moves === 1 ? ' answer' : ' answers');
+      const durationLabel = highScoreRecord.elapsedSeconds > 0
+        ? ' in ' + formatElapsedSeconds(highScoreRecord.elapsedSeconds)
+        : '';
+      metaEl.textContent = 'Best run: ' + answersLabel + durationLabel;
+    } else {
+      metaEl.textContent = '';
+    }
+  } else {
+    scoreEl.textContent = '0';
+    metaEl.textContent = 'High score only saved for completed games';
+  }
+}
+
+function maybeUpdateHighScore(){
+  if (!isAlfaScoringMode()) return false;
+  const isCompletedRun = isCompletedAlfaRun();
+  if (!isCompletedRun) return false;
+  lockRunEndTime();
+  syncLiveScoreTimer();
+  const breakdown = getScoreBreakdown();
+  const total = breakdown.finalScore;
+  if (total <= 0 || submitted.length === 0) return false;
+  if (highScoreRecord) {
+    if (total < highScoreRecord.score) return false;
+    if (total === highScoreRecord.score) {
+      const previousElapsed = Number.isFinite(highScoreRecord.elapsedSeconds)
+        ? highScoreRecord.elapsedSeconds
+        : Number.MAX_SAFE_INTEGER;
+      if (breakdown.elapsedSeconds >= previousElapsed) return false;
+    }
+  }
+  highScoreRecord = {
+    version: ALFA_SCORING_VERSION,
+    completed: true,
+    score: total,
+    rawScore: breakdown.rawScore,
+    speedBonus: breakdown.speedBonus,
+    moves: submitted.length,
+    elapsedSeconds: breakdown.elapsedSeconds,
+    timeFactor: breakdown.timeFactor,
+    achievedAt: new Date().toISOString()
+  };
+  saveHighScore();
+  renderHighScore();
+  return true;
+}
+
+function setScoreDisplayEnabled(enabled){
+  scoreDisplayEnabled = isAlfaScoringMode() && !!enabled;
+  if (typeof document === 'undefined') return;
+  const scorePanel = document.getElementById('scorePanel');
+  if (scorePanel) scorePanel.style.display = scoreDisplayEnabled ? 'block' : 'none';
+  syncLiveScoreTimer();
+  updateUI();
+}
+
+function showToast(message, variant, durationMs, onClick){
+  if (typeof document === 'undefined') return;
+  const existing = document.getElementById('alfa-toast');
+  if (existing) existing.remove();
+
+  const palettes = {
+    success: { text: '#05210f', bg: 'linear-gradient(90deg, #22c55e, #86efac)', shadow: '0 8px 24px rgba(34, 197, 94, 0.35)' },
+    error: { text: '#2b0a0a', bg: 'linear-gradient(90deg, #ef4444, #fca5a5)', shadow: '0 8px 24px rgba(239, 68, 68, 0.35)' },
+    info: { text: '#021023', bg: 'linear-gradient(90deg, #38bdf8, #7dd3fc)', shadow: '0 8px 24px rgba(56, 189, 248, 0.35)' }
+  };
+  const palette = palettes[variant] || palettes.info;
+
+  const toast = document.createElement('div');
+  toast.id = 'alfa-toast';
+  toast.textContent = message;
+  toast.style.position = 'fixed';
+  toast.style.top = '18px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.zIndex = '9999';
+  toast.style.padding = '12px 18px';
+  toast.style.borderRadius = '999px';
+  toast.style.color = palette.text;
+  toast.style.fontWeight = '800';
+  toast.style.letterSpacing = '0.2px';
+  toast.style.background = palette.bg;
+  toast.style.boxShadow = palette.shadow;
+  toast.style.opacity = '0';
+  toast.style.transition = 'opacity 220ms ease, transform 220ms ease';
+  if (typeof onClick === 'function'){
+    toast.style.cursor = 'pointer';
+    toast.title = 'Tap to continue';
+    toast.addEventListener('click', () => {
+      onClick();
+      toast.remove();
+    });
+  }
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  if (durationMs === 0) return;
+  const displayMs = typeof durationMs === 'number' ? durationMs : 2600;
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-6px)';
+    setTimeout(() => toast.remove(), 240);
+  }, displayMs);
+}
+
+function showSuccessToast(message, durationMs){
+  showToast(message, 'success', durationMs);
+}
+
+function showErrorToast(message, durationMs){
+  showToast(message, 'error', durationMs || 3000);
+}
+
+function showInfoToast(message, durationMs){
+  showToast(message, 'info', durationMs || 2200);
+}
+
+function showResetRequiredToast(message, variant){
+  const suffix = String(message).endsWith('.') ? ' Tap here to reset' : '. Tap here to reset';
+  showToast(message + suffix, variant || 'error', 0, () => {
+    resetLocal();
+  });
+}
+
+function getEasyModeRating(moveCount){
+  if (moveCount <= 6) return 'Legendary';
+  if (moveCount === 7) return 'Excellent';
+  if (moveCount === 8) return 'Very good';
+  if (moveCount === 9) return 'Good';
+  if (moveCount === 10) return 'Fair';
+  return 'Keep Trying';
+}
+
+function getNormalModeRating(moveCount){
+  if (moveCount <= 12) return 'Legendary';
+  if (moveCount <= 14) return 'Excellent';
+  if (moveCount <= 16) return 'Very good';
+  if (moveCount <= 18) return 'Good';
+  if (moveCount <= 20) return 'Fair';
+  return 'Completed';
+}
+
+function getHardModeRating(moveCount){
+  if (moveCount <= 8) return 'Legendary';
+  if (moveCount === 9) return 'Excellent';
+  if (moveCount === 10) return 'Very good';
+  return 'Good';
+}
+
+function isCompletedAlfaRun(){
+  return GAME_ALPH.every(ch => usedStarts.has(ch));
+}
+
+function getAlfaScoreRating(finalScore){
+  if (finalScore >= 1000000) return 'Legendary';
+  if (finalScore >= 960000) return 'Excellent';
+  if (finalScore >= 920000) return 'Very good';
+  if (finalScore >= 880000) return 'Good';
+  if (finalScore >= 840000) return 'Fair';
+  return 'Completed';
+}
+
+function getCompletionToastMessage(){
+  if (isAlfaMode()){
+    const breakdown = getScoreBreakdown();
+    const rating = getAlfaScoreRating(breakdown.finalScore);
+    return 'Bravo! All 24 required starting letters completed. Score: ' + breakdown.finalScore + '. Rating: ' + rating + '.';
+  }
+  if (isEasyAlfafillMode()){
+    const moveCount = submitted.length;
+    const rating = getEasyModeRating(moveCount);
+    return 'Bravo! All target letters completed in ' + moveCount + ' countries. Rating: ' + rating + '.';
+  }
+  if (isNormalAlfafillMode()){
+    const moveCount = submitted.length;
+    const rating = getNormalModeRating(moveCount);
+    return 'Bravo! All target letters completed in ' + moveCount + ' countries. Rating: ' + rating + '.';
+  }
+  if (isSequentialFullCollectMode()){
+    const moveCount = submitted.length;
+    const rating = getHardModeRating(moveCount);
+    return 'Bravo! All target letters completed in ' + moveCount + ' countries. Rating: ' + rating + '.';
+  }
+  return 'Bravo! All target letters completed.';
+}
+
+function scheduleGameOverReset(delayMs){
+  if (gameOverResetTimer) clearTimeout(gameOverResetTimer);
+}
+
+function updateUI(){
+  ensureSubmittedLegend();
+  const usedArr = Array.from(usedLetters).sort();
+  const isAlfa = isAlfaMode();
+  const isEasyFill = isEasyAlfafillMode();
+  const isNormal = isNormalAlfafillMode();
+  const isSeq = isSequentialAlfafillMode();
+  const isSeqFull = isSequentialFullCollectMode();
+  const remainingLetters = ALPH.filter(c => !usedLetters.has(c));
+  const remainingSeqLetters = ALPH.filter(c => !usedLetters.has(c));
+  const remainingLettersSet = new Set(remainingLetters);
+  let remainingCount;
+  if (isAlfa){
+    const remainingStarts = GAME_ALPH.filter(c => !usedStarts.has(c));
+    remainingCount = remainingStarts.length;
+  } else if (isSeq){
+    remainingCount = remainingSeqLetters.length;
+  } else if (isSeqFull){
+    remainingCount = remainingLetters.length;
+  } else {
+    remainingCount = remainingLetters.length;
+  }
+  document.getElementById('remainingLetters').textContent = remainingCount;
+  const scorePanelEl = document.getElementById('scorePanel');
+  const totalScoreEl = document.getElementById('totalScore');
+  const rawScoreEl = document.getElementById('rawScore');
+  const lastScoreEl = document.getElementById('lastScore');
+  const elapsedTimeEl = document.getElementById('elapsedTime');
+  const timeFactorEl = document.getElementById('timeFactor');
+  const scoreRatingEl = document.getElementById('scoreRating');
+  const scoreMovesEl = document.getElementById('scoreMoves');
+  renderHighScore();
+  if (isAlfa && scorePanelEl && totalScoreEl && lastScoreEl){
+    scorePanelEl.style.display = scoreDisplayEnabled ? 'block' : 'none';
+    renderAlfaScorePanelMetrics();
+    syncLiveScoreTimer();
+  }
+  if (scorePanelEl && scoreRatingEl && scoreMovesEl && (isEasyFill || isNormal || isSeqFull)){
+    const moveCount = submitted.length;
+    scorePanelEl.style.display = (scoreDisplayEnabled || moveCount > 0) ? 'block' : 'none';
+    if (isEasyFill) scoreRatingEl.textContent = getEasyModeRating(moveCount);
+    else if (isNormal) scoreRatingEl.textContent = getNormalModeRating(moveCount);
+    else scoreRatingEl.textContent = getHardModeRating(moveCount);
+    scoreMovesEl.textContent = moveCount + (moveCount === 1 ? ' country used' : ' countries used');
+  }
+  const ul = document.getElementById('submittedList'); ul.innerHTML = '';
+  // Render submitted countries and highlight letters that were already used before each submission
+  const runningSeen = new Set();
+  const usedStartingLetters = new Set();
+  submitted.forEach((c,i)=>{
+    const alreadyUsed = new Set();
+    const letters = new Set();
+    for (const ch of c) if (ch >= 'a' && ch <= 'z') letters.add(ch);
+    if (isAlfa || isNormal){
+      for (const ch of letters) if (usedStartingLetters.has(ch)) alreadyUsed.add(ch);
+      const start = c && c.length ? c.charAt(0) : '';
+      if (start) usedStartingLetters.add(start);
+    } else {
+      for (const ch of letters) if (runningSeen.has(ch)) alreadyUsed.add(ch);
+      for (const ch of letters) runningSeen.add(ch);
+    }
+    let activeLetter = '';
+    if (isAlfa || isNormal){
+      try { activeLetter = getRequiredStart(submitted.slice(0, i + 1)); } catch(e) { activeLetter = ''; }
+    }
+    const li = document.createElement('li');
+    let scoreSuffix = '';
+    if (isAlfa && scoreDisplayEnabled) {
+      const total = submissionScores[i] || 0;
+      const positionBonus = (i + 1) * 100;
+      const firstLetterScore = total - positionBonus;
+      scoreSuffix = ' <span class="score-meta">(+' + total + ': ' + firstLetterScore + ' starting letter + ' + positionBonus + ' position bonus)</span>';
+    }
+    li.innerHTML = (i+1)+'. '+formatDisplayWithHighlights(c, alreadyUsed, c.charAt(0), activeLetter) + scoreSuffix;
+    ul.appendChild(li);
+  });
+  renderLetterGrid();
+  const pct = isAlfa
+    ? Math.round(((GAME_ALPH.length - remainingCount) / GAME_ALPH.length) * 100)
+    : Math.round(((26 - remainingCount) / 26) * 100);
+  const bar = document.getElementById('progressBar'); if (bar) bar.style.width = pct + '%';
+  // show required next-start letter
+  if (isAlfa || isNormal || isSeq || isSeqFull){
+    try{
+      const req = (isAlfa || isNormal) ? getRequiredStart(submitted) : getNextSequentialRequiredLetter();
+      const requiredLabel = req ? req.toUpperCase() : '?';
+      const shouldPulse = requiredLabel !== lastRenderedRequiredLetter;
+      renderSessionInfo(requiredLabel, null, shouldPulse);
+      lastRenderedRequiredLetter = requiredLabel;
+      // check for available countries matching required rule
+      const available = (isAlfa || isNormal)
+        ? findAvailableCountries(req, remainingLettersSet, false)  // Alfaquest: any country with correct start is valid
+        : findAvailableCountries(req, remainingLettersSet, isSeqFull);
+      const statusEl = document.getElementById('status');
+      const submitBtn = document.getElementById('submitCountry');
+      const input = document.getElementById('countryInput');
+      if (available.length === 0){
+        if (statusEl){
+          statusEl.textContent = 'No valid countries for required: ' + (req ? req.toUpperCase() : '?');
+          statusEl.className = 'status-danger';
+        }
+        if (!gameOver){
+          gameOver = true;
+          // give a specific reason why there are no valid countries
+          const letter = (req || '?').toUpperCase();
+          const allForLetter = COUNTRY_LIST.filter(c => c && c.charAt(0) === (req||'').toLowerCase());
+          const unusedForLetter = allForLetter.filter(c => submitted.indexOf(c) === -1);
+          let reason;
+          if (allForLetter.length === 0){
+            reason = 'There are no countries beginning with "' + letter + '" in the list.';
+          } else if (unusedForLetter.length === 0){
+            reason = 'All countries beginning with "' + letter + '" have already been used.';
+          } else {
+            reason = (isAlfa || isNormal)
+              ? 'All remaining countries beginning with "' + letter + '" are no longer valid from this position.'
+              : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.';
+          }
+          showResetRequiredToast('Game over — required start is "' + letter + '". ' + reason, 'error');
+        }
+        if (submitBtn) submitBtn.disabled = true;
+        if (input) input.disabled = true;
+      } else {
+        if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
+        gameOver = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (input) input.disabled = false;
+      }
+    }catch(e){
+      if (e && e.message && e.message.indexOf('GAME OVER') !== -1){
+        if (!gameOver){
+          gameOver = true;
+          showResetRequiredToast(e.message, 'error');
+        }
+      }
+    }
+  } else {
+    renderSessionInfo(null);
+    lastRenderedRequiredLetter = null;
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitCountry');
+    const input = document.getElementById('countryInput');
+    if (isEasyFill){
+      const unreachable = findUnreachableRemainingLetters(remainingLettersSet);
+      if (remainingLetters.length > 0 && unreachable.length > 0){
+        if (statusEl){
+          statusEl.textContent = 'No valid countries can add required remaining letters.';
+          statusEl.className = 'status-danger';
+        }
+        if (!gameOver){
+          gameOver = true;
+          const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
+          showResetRequiredToast('Game over — no unused country can add the remaining letter(s): ' + rem + '.', 'error');
+        }
+        if (submitBtn) submitBtn.disabled = true;
+        if (input) input.disabled = true;
+      } else {
+        if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
+        gameOver = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (input) input.disabled = false;
+      }
+    } else {
+      if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
+    }
+  }
+  if ((isAlfa && remainingCount === 0) || (isSeq && isSequenceModeComplete()) || (isSeqFull && remainingLetters.length === 0) || (!isAlfa && !isSeq && !isSeqFull && remainingLetters.length === 0)) {
+    if (!completionShown){
+      completionShown = true;
+      if (isAlfa) maybeUpdateHighScore();
+      showResetRequiredToast(getCompletionToastMessage(), 'success');
+    }
+  }
+}
+
+function findAvailableCountries(required, remainingSet, requireNewLetterBeyondStart){
+  if (!required) return [];
+  const out = [];
+  for (const c of COUNTRY_LIST){
+    if (!c || c.charAt(0) !== required) continue;
+    if (submitted.indexOf(c) !== -1) continue;
+    if (!requireNewLetterBeyondStart){
+      out.push(c);
+      continue;
+    }
+    // For Alfaquest (requireNewLetterBeyondStart=true with usedLetters): 
+    // Check if country contains at least one letter not yet collected
+    let hasNewLetter = false;
+    for (const ch of c){ 
+      if (ch >= 'a' && ch <= 'z' && !usedLetters.has(ch)){ 
+        hasNewLetter = true; 
+        break; 
+      } 
+    }
+    if (hasNewLetter) out.push(c);
+  }
+  return out;
+}
+
+function findContributingCountriesAnyStart(remainingSet){
+  const out = [];
+  for (const c of COUNTRY_LIST){
+    if (!c) continue;
+    if (submitted.indexOf(c) !== -1) continue;
+    for (const ch of c){
+      if (remainingSet.has(ch)){
+        out.push(c);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function findUnreachableRemainingLetters(remainingSet){
+  const canStillCollect = new Set();
+  for (const c of COUNTRY_LIST){
+    if (!c) continue;
+    if (submitted.indexOf(c) !== -1) continue;
+    for (const ch of c){
+      if (remainingSet.has(ch)) canStillCollect.add(ch);
+    }
+  }
+  const unreachable = [];
+  for (const ch of remainingSet){
+    if (!canStillCollect.has(ch)) unreachable.push(ch);
+  }
+  return unreachable;
+}
+
+function getNextSequentialRequiredLetter(){
+  for (const ch of GAME_ALPH){
+    if (!usedLetters.has(ch)) return ch;
+  }
+  return null;
+}
+
+function isSequenceModeComplete(){
+  const hasW = usedLetters.has('w');
+  const hasX = usedLetters.has('x');
+  const hasZ = usedLetters.has('z');
+  const last = submitted.length ? normalize(submitted[submitted.length - 1]) : '';
+  const lastStartsZ = !!last && last.charAt(0) === 'z';
+  const coreDone = GAME_ALPH.filter(ch => ch !== 'z').every(ch => usedLetters.has(ch));
+  return coreDone && hasW && hasX && (hasZ || lastStartsZ);
+}
+
+function getSequentialCollectedLetters(word, baseUsedLetters){
+  const usedBase = baseUsedLetters ? new Set(baseUsedLetters) : new Set();
+  let required = null;
+  for (const ch of GAME_ALPH){
+    if (!usedBase.has(ch)) { required = ch; break; }
+  }
+  if (!required) return [];
+
+  const n = normalize(word);
+  if (!n || n.charAt(0) !== required) return [];
+
+  const lettersInWord = new Set();
+  for (const ch of n) if (ch >= 'a' && ch <= 'z') lettersInWord.add(ch);
+
+  const collected = [];
+  const reqIdx = GAME_ALPH.indexOf(required);
+  for (let i = reqIdx; i < GAME_ALPH.length; i++){
+    const ch = GAME_ALPH[i];
+    if (usedBase.has(ch)) continue;
+    if (!lettersInWord.has(ch)) break;
+    collected.push(ch);
+    usedBase.add(ch);
+  }
+
+  // Only W and X may be picked up out of sequence in this mode.
+  for (const ch of ['w', 'x']){
+    if (lettersInWord.has(ch) && !usedBase.has(ch)){
+      collected.push(ch);
+      usedBase.add(ch);
+    }
+  }
+
+  return collected;
+}
+
+function getAllNewLetters(word, baseUsedLetters){
+  const usedBase = baseUsedLetters ? new Set(baseUsedLetters) : new Set();
+  const n = normalize(word);
+  const lettersInWord = new Set();
+  for (const ch of n) if (ch >= 'a' && ch <= 'z') lettersInWord.add(ch);
+  const collected = [];
+  for (const ch of lettersInWord){
+    if (!usedBase.has(ch)){
+      collected.push(ch);
+      usedBase.add(ch);
+    }
+  }
+  return collected;
+}
+
+function formatDisplayWithHighlights(nameLower, highlights, startLetter, activeLetter){
+  // convert lower-case stored name to title case, then uppercase characters that are in highlights
+  // Prefer canonical display name if available
+  const displayMap = (typeof window !== 'undefined' && window._alfa_country_display) ? window._alfa_country_display : null;
+  const base = displayMap && displayMap[nameLower] ? displayMap[nameLower] : titleCase(nameLower);
+  const start = normalize(startLetter).charAt(0);
+  const active = normalize(activeLetter).charAt(0);
+
+  function titleCase(s){ return s.split(/(\s|-|\.|,)/).map(part => {
+    if (part.match(/\s|\-|\.|,/)) return part;
+    return part.length ? (part.charAt(0).toUpperCase() + part.slice(1)) : part;
+  }).join(''); }
+  // escape HTML to be safe when inserting into innerHTML
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  let out = '';
+  let activeHighlighted = false;
+  for (let i = 0; i < base.length; i++){
+    const ch = base.charAt(i);
+    const lower = ch.toLowerCase();
+    if (lower >= 'a' && lower <= 'z'){
+      if (active && lower === active && !activeHighlighted){
+        out += '<span class="hl" style="color:#fbbf24">' + esc(ch) + '</span>';
+        activeHighlighted = true;
+      } else if (IGNORED.indexOf(lower) !== -1){
+        out += '<span class="hl" style="color:#ef4444">' + esc(ch) + '</span>';
+      } else if (highlights.has(lower)){
+        out += '<span class="hl" style="color:#22c55e">' + esc(ch) + '</span>';
+      } else {
+        out += esc(ch);
+      }
+    } else {
+      out += esc(ch);
+    }
+  }
+  return out;
+}
+
+// compute required starting letter for next submission, following alfaquest rules
+function getRequiredStart(submittedList){
+  const alpha = GAME_ALPH.slice();
+  const usedStarts = IGNORED.slice();
+  let prevCommon = null;
+
+  for (let i = 0; i < submittedList.length; i++){
+    const w = normalize(submittedList[i]);
+    if (!w) throw new Error('Invalid word at index '+i);
+    const start = w.charAt(0);
+    if (usedStarts.indexOf(start) !== -1) throw new Error('Word already used: '+w);
+    usedStarts.push(start);
+    // remove start from alpha
+    for (let k = alpha.length-1;k>=0;k--) if (alpha[k] === start) alpha.splice(k,1);
+    // find first letter in w that is still in alpha
+    let common = '';
+    for (let j = 0; j < w.length; j++){
+      const ch = w.charAt(j);
+      if (alpha.indexOf(ch) !== -1){ common = ch; break; }
+    }
+    if (common === '') throw new Error('You have ran out of letters, GAME OVER');
+    prevCommon = common;
+  }
+
+  if (submittedList.length === 0) return 'a';
+  return prevCommon;
+}
+
+function renderLetterGrid(){
+  const container = document.getElementById('letterGrid');
+  if (!container) return;
+  container.innerHTML = '';
+  const isAlfa = (typeof window !== 'undefined') && window.ALFAQUEST_MODE;
+  const isNormal = isNormalAlfafillMode();
+  const isSeq = isSequentialAlfafillMode();
+  const isSeqFull = isSequentialFullCollectMode();
+  let required = null;
+  if (isAlfa || isNormal){
+    try{ required = getRequiredStart(submitted); }catch(e){ required = null; }
+  } else if (isSeq || isSeqFull){
+    required = getNextSequentialRequiredLetter();
+  }
+  for (const ch of ALPH){
+    const div = document.createElement('div');
+    const classes = ['letter-cell'];
+    if (isAlfa){
+      const isIgnoredStart = IGNORED.indexOf(ch) !== -1;
+      if (isIgnoredStart) classes.push('ignored-letter');
+      else if (usedStarts.has(ch)) classes.push('start-used');
+      else if (ch === required) classes.push('next-required');
+      else classes.push('unrevealed');
+    } else if (isNormal || isSeq || isSeqFull){
+      if (isNormal && ch === required) classes.push('next-required');
+      else if (usedLetters.has(ch)) classes.push('used');
+      else if (ch === required) classes.push('next-required');
+      else classes.push('unrevealed');
+    } else {
+      if (usedLetters.has(ch)) classes.push('used');
+      else classes.push('unrevealed');
+    }
+    div.className = classes.join(' ');
+    div.textContent = ch.toUpperCase();
+    container.appendChild(div);
+  }
+}
+
+function addCountryLocal(name){
+  const n = normalize(name);
+  const isAlfa = isAlfaMode();
+  const isEasyFill = isEasyAlfafillMode();
+  const isNormal = isNormalAlfafillMode();
+  const isSeq = isSequentialAlfafillMode();
+  const isSeqFull = isSequentialFullCollectMode();
+  let requiredStart = null;
+  if (!n) return showErrorToast('Enter a country name');
+  if (gameOver) return showErrorToast('Game is over - reset to play again');
+  if (submitted.indexOf(n) !== -1) return showErrorToast('Country already submitted');
+  if (COUNTRY_LIST.indexOf(n) === -1) return showErrorToast('Country not in list or misspelled');
+  // ensure used-starts up to date and block reused starts
+  recomputeUsedStarts();
+  if (!isEasyFill && !isSeq && !isSeqFull && usedStarts.has(n.charAt(0))) return showErrorToast('Starting letter already used');
+  // enforce alfaquest sequencing rule
+  if (!isEasyFill){
+    if (isSeq || isSeqFull){
+      requiredStart = getNextSequentialRequiredLetter();
+      if (!requiredStart) return showInfoToast('All letters are complete. Reset to play again.');
+      if (n.charAt(0) !== requiredStart) return showErrorToast('Invalid start letter - required: '+requiredStart.toUpperCase());
+    } else {
+      try{
+        const required = getRequiredStart(submitted);
+        if (n.charAt(0) !== required) return showErrorToast('Invalid start letter - required: '+required.toUpperCase());
+      }catch(e){ return showErrorToast(e.message); }
+    }
+  }
+  // ensure the country contributes according to active mode
+  let collectedSeq = [];
+  let collectedAll = [];
+  if (isSeq){
+    collectedSeq = getSequentialCollectedLetters(n, usedLetters);
+    if (collectedSeq.length === 0) return showErrorToast('This country does not collect the next required letter(s) in sequence');
+    if (requiredStart && collectedSeq.length === 1 && collectedSeq[0] === requiredStart){
+      gameOver = true;
+      const submitBtn = document.getElementById('submitCountry');
+      const input = document.getElementById('countryInput');
+      if (submitBtn) submitBtn.disabled = true;
+      if (input) input.disabled = true;
+      showResetRequiredToast('Dead-end move: this country only collects the required letter and does not create a valid continuation. GAME OVER.', 'error');
+      return;
+    }
+  } else if (isSeqFull){
+    collectedAll = getAllNewLetters(n, usedLetters);
+    if (collectedAll.length === 0) return showErrorToast('This country does not introduce any new letters');
+    if (requiredStart && collectedAll.length === 1 && collectedAll[0] === requiredStart){
+      gameOver = true;
+      const submitBtn = document.getElementById('submitCountry');
+      const input = document.getElementById('countryInput');
+      if (submitBtn) submitBtn.disabled = true;
+      if (input) input.disabled = true;
+      showResetRequiredToast('Dead-end move: this country only collects the required letter and does not create a valid continuation. GAME OVER.', 'error');
+      return;
+    }
+  } else if (isNormal) {
+    // Normal mode allows a no-new-letter move, but it ends the game immediately.
+    const letters = new Set();
+    for (const ch of n) if (ch >= 'a' && ch <= 'z') letters.add(ch);
+    let contributes = false;
+    for (const ch of letters) if (!usedLetters.has(ch)) { contributes = true; break; }
+
+    if (!contributes){
+      submitted.push(n);
+      if (isAlfaScoringMode()) submissionScores.push(scoreWord(n, submitted.length));
+      usedStarts.add(n.charAt(0));
+      for (const ch of n) if (ch >= 'a' && ch <= 'z') usedLetters.add(ch);
+      updateUI();
+      saveLocal();
+
+      gameOver = true;
+      const submitBtn = document.getElementById('submitCountry');
+      const input = document.getElementById('countryInput');
+      if (submitBtn) submitBtn.disabled = true;
+      if (input) input.disabled = true;
+      showResetRequiredToast('Game over — this submission does not introduce any new letters.', 'error');
+      return;
+    }
+  } else if (isEasyFill) {
+    // Easy Alfafill mode: must contribute at least one new letter
+    const letters = new Set(); for (const ch of n) if (ch >= 'a' && ch <= 'z') letters.add(ch);
+    let contributes = false; for (const ch of letters) if (!usedLetters.has(ch)) { contributes = true; break; }
+    if (!contributes) return showErrorToast('This country does not introduce any new letters');
+  }
+  submitted.push(n);
+  if (isAlfaScoringMode()) {
+    if (runStartedAtMs === null) runStartedAtMs = Date.now();
+    runEndedAtMs = null;
+    syncLiveScoreTimer();
+  }
+  if (isAlfaScoringMode()) {
+    submissionScores.push(scoreWord(n, submitted.length));
+    speedBonuses.push(computeSpeedBonus(n, consumeEntryElapsedMs()));
+  }
+  if (!isSeq && !isSeqFull) usedStarts.add(n.charAt(0));
+  if (isSeq){
+    for (const ch of collectedSeq) usedLetters.add(ch);
+  } else if (isSeqFull){
+    for (const ch of collectedAll) usedLetters.add(ch);
+  } else {
+    for (const ch of n) if (ch >= 'a' && ch <= 'z') usedLetters.add(ch);
+  }
+  updateUI();
+  saveLocal();
+}
+
+function saveLocal(){
+  try{
+    localStorage.setItem('allletters_submitted', JSON.stringify(submitted));
+    localStorage.setItem('allletters_used', JSON.stringify(Array.from(usedLetters)));
+    localStorage.setItem('allletters_scores', JSON.stringify(submissionScores));
+  }catch(e){}
+}
+function loadLocal(){
+  try{
+    const isAlfa = isAlfaMode();
+    if (isAlfa){
+      // In Alfaquest (original game) mode we don't persist across refreshes — clear any saved state
+      try{ localStorage.removeItem('allletters_submitted'); localStorage.removeItem('allletters_used'); localStorage.removeItem('allletters_scores'); }catch(e){}
+      submitted = [];
+      usedLetters = new Set();
+      submissionScores = [];
+      speedBonuses = [];
+      currentEntryStartedAtMs = null;
+      runStartedAtMs = null;
+      runEndedAtMs = null;
+      recomputeUsedStarts();
+      return;
+    }
+    // In Alfafill mode, also reset on refresh.
+    try{ localStorage.removeItem('allletters_submitted'); localStorage.removeItem('allletters_used'); localStorage.removeItem('allletters_scores'); }catch(e){}
+    submitted = [];
+    usedLetters = new Set();
+    submissionScores = [];
+    speedBonuses = [];
+    currentEntryStartedAtMs = null;
+    runStartedAtMs = null;
+    runEndedAtMs = null;
+    recomputeUsedStarts();
+  }catch(e){ submitted = []; usedLetters = new Set(); submissionScores = []; speedBonuses = []; currentEntryStartedAtMs = null; runStartedAtMs = null; runEndedAtMs = null; }
+}
+
+// Server session helpers (optional)
+async function createSession(){
+  try{
+    const res = await fetch(apiUrl('/session/create'), {method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' });
+    const j = await res.json();
+    if (j.session){ sessionName = j.session; renderSessionInfo(null, 'created'); showInfoToast('Session created: '+sessionName); }
+    else showErrorToast('Failed to create session');
+  }catch(e){ showErrorToast('Error creating session (is Worker running at '+apiUrl('/session/create')+'?) '+e.message, 4200); }
+}
+
+async function submitToServer(text){
+  if (!sessionName) return showErrorToast('No session created');
+  try{
+    const url = apiUrl('/session/'+encodeURIComponent(sessionName)+'/submit');
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})});
+    const j = await res.json();
+    if (j.error) showErrorToast('Server error: '+j.error); else { renderSessionInfo(null, 'saved'); }
+  }catch(e){ showErrorToast('Error submitting to server: '+e.message); }
+}
+
+async function loadSessionStatus(){
+  if (!sessionName) return showErrorToast('No session');
+  try{
+    const url = apiUrl('/session/'+encodeURIComponent(sessionName));
+    const res = await fetch(url);
+    const j = await res.json();
+    if (j.error) return showErrorToast('Server error: '+j.error);
+    submitted = (j.texts || []).map(s => normalize(s));
+    usedLetters = new Set(j.used || []);
+    if (isAlfaScoringMode()) {
+      submissionScores = submitted.map((entry, i) => scoreWord(entry, i + 1));
+      speedBonuses = submitted.map(() => 0);
+    } else {
+      submissionScores = [];
+      speedBonuses = [];
+    }
+    recomputeUsedStarts();
+    updateUI();
+  }catch(e){ showErrorToast('Error loading session: '+e.message); }
+}
+
+function resetLocal(){
+  submitted = [];
+  usedLetters = new Set();
+  submissionScores = [];
+  speedBonuses = [];
+  currentEntryStartedAtMs = null;
+  runStartedAtMs = null;
+  runEndedAtMs = null;
+  syncLiveScoreTimer();
+  sessionName = null;
+  completionShown = false;
+  if (completionResetTimer) {
+    clearTimeout(completionResetTimer);
+    completionResetTimer = null;
+  }
+  if (gameOverResetTimer) {
+    clearTimeout(gameOverResetTimer);
+    gameOverResetTimer = null;
+  }
+  renderSessionInfo(null);
+  lastRenderedRequiredLetter = null;
+  gameOver = false;
+  // restore ignored starts (w,x) and recompute from empty submitted
+  recomputeUsedStarts();
+  // re-enable inputs
+  const submitBtn = document.getElementById('submitCountry');
+  const input = document.getElementById('countryInput');
+  if (submitBtn) submitBtn.disabled = false;
+  if (input) { input.disabled = false; input.value = ''; }
+  saveLocal(); updateUI();
+}
+
+function recomputeUsedStarts(){
+  usedStarts = new Set(IGNORED);
+  for (const s of submitted){
+    const n = normalize(s);
+    if (n && n.length>0) usedStarts.add(n.charAt(0));
+  }
+}
+
+// Wire up UI
+window.addEventListener('load', ()=>{
+  ensureSubmittedLegend();
+  loadHighScore(); loadLocal(); updateUI();
+  const input = document.getElementById('countryInput');
+  const scoreToggle = document.getElementById('scoreToggle');
+  if (scoreToggle){
+    scoreToggle.checked = true;
+    if (scoreToggle.parentElement) scoreToggle.parentElement.style.display = isAlfaScoringMode() ? '' : 'none';
+    setScoreDisplayEnabled(true);
+    scoreToggle.addEventListener('change', (e) => {
+      setScoreDisplayEnabled(e.target.checked);
+    });
+  }
+  document.getElementById('submitCountry').addEventListener('click', async ()=>{
+    const text = input.value;
+    if (!text) return;
+    addCountryLocal(text);
+    // automatically persist to server when a session exists
+    if (sessionName){ await submitToServer(text); }
+    input.value = '';
+  });
+  input.addEventListener('keypress', (e)=>{ if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('submitCountry').click(); } });
+  input.addEventListener('keydown', (e)=>{
+    if (!isAlfaScoringMode() || gameOver) return;
+    if (e.key === 'Enter') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.length !== 1 && e.key !== 'Backspace' && e.key !== 'Delete') return;
+    if (currentEntryStartedAtMs === null) currentEntryStartedAtMs = Date.now();
+  });
+  const resetBtn = document.getElementById('resetLocal');
+  if (resetBtn) resetBtn.addEventListener('click', ()=>{
+    showToast('Reset game? Tap here to confirm.', 'info', 0, () => resetLocal());
+    const dismissOnOutsideClick = (e) => {
+      const toast = document.getElementById('alfa-toast');
+      if (!toast){
+        document.removeEventListener('click', dismissOnOutsideClick, true);
+        return;
+      }
+      if (toast.contains(e.target)) return;
+      toast.remove();
+      document.removeEventListener('click', dismissOnOutsideClick, true);
+    };
+    // Attach after current click completes so opening the toast doesn't instantly dismiss it.
+    setTimeout(() => document.addEventListener('click', dismissOnOutsideClick, true), 0);
+  });
+  const createBtn = document.getElementById('createSession');
+  if (createBtn) createBtn.addEventListener('click', async ()=>{ await createSession(); if (sessionName) await loadSessionStatus(); });
+});
