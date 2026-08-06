@@ -5,9 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
+# Private repos on GitHub Free allow only one concurrent job. A per-branch
+# concurrency group lets multiple pushes queue separate runs that all wait for
+# a runner and then fail after ~15 minutes. One repo-wide group cancels stale
+# runs immediately when a newer commit arrives.
 concurrency:
-  group: regression-${{ github.workflow }}-${{ github.ref }}
+  group: regression-tests-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
@@ -57,10 +62,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Required repo secrets:
+      # Required repo secrets (Settings → Secrets and variables → Actions):
       #   CLOUDFLARE_API_TOKEN — Cloudflare API token with "Cloudflare Pages: Edit"
       #   CLOUDFLARE_ACCOUNT_ID — e.g. 06d216065309310baafe29018273f4b2
-      # One-time: run scripts/fix-pages-production-branch.sh so production_branch=main
+      # If deploy is not configured, use manual deploy: npm run deploy
       - name: Deploy to Cloudflare Pages (production)
         uses: cloudflare/wrangler-action@v3
         with:

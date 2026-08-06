@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(13, 1fr);
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .letter-cell {
@@ -58,6 +58,7 @@
 
 .required-letter-banner {
   margin: 10px 0 0;
+  min-height: 2.5rem;
 }
 
 .required-letter-banner:empty {
@@ -145,6 +146,12 @@
   border: 1px solid rgba(239, 68, 68, 0.55);
 }
 
+.rating-progress-row {
+  min-height: 2.75rem;
+  margin-bottom: 10px;
+  visibility: hidden;
+}
+
 .game-row {
   display: flex;
   gap: 12px;
@@ -154,6 +161,8 @@
 
 .game-row--board {
   align-items: flex-start;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .game-main {

@@ -215,9 +215,9 @@ function ensureSessionInfoBadgeStyles(){
 
 function ensureRequiredLetterBanner(){
   if (typeof document === 'undefined') return;
+  if (document.getElementById('requiredLetterInfo')) return;
   const gridEl = document.getElementById('letterGrid');
   if (!gridEl || !gridEl.parentNode) return;
-  if (document.getElementById('requiredLetterInfo')) return;
 
   const banner = document.createElement('div');
   banner.id = 'requiredLetterInfo';
@@ -451,11 +451,13 @@ function configureCountryInput(){
 function scrollSubmittedListIntoView(){
   if (typeof document === 'undefined') return;
   const list = document.getElementById('submittedList');
-  if (!list || list.children.length === 0) return;
+  if (!list || list.children.length <= 1) return;
+  if (typeof window !== 'undefined' && window.matchMedia('(min-width: 801px)').matches) return;
   const lastItem = list.lastElementChild;
-  if (lastItem && typeof lastItem.scrollIntoView === 'function') {
-    lastItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
+  if (!lastItem || typeof lastItem.scrollIntoView !== 'function') return;
+  const rect = lastItem.getBoundingClientRect();
+  if (rect.top >= 0 && rect.bottom <= window.innerHeight) return;
+  lastItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function getElapsedSeconds(){
@@ -646,21 +648,17 @@ function renderAlfaScorePanelMetrics(){
   if (alfaRatingSubEl) {
     alfaRatingSubEl.textContent = completed ? 'Final rating' : 'On-pace rating';
   }
-  if (alfaRatingHeroEl) {
-    alfaRatingHeroEl.style.display = submitted.length > 0 ? 'block' : 'none';
-  }
-
   if (ratingProgressRowEl && ratingProgressLabelEl && ratingProgressBarEl) {
     if (submitted.length > 0 && progress.nextRating && progress.pointsNeeded > 0) {
-      ratingProgressRowEl.style.display = 'block';
+      ratingProgressRowEl.style.visibility = 'visible';
       ratingProgressLabelEl.textContent = progress.nextRating + ' in ' + progress.pointsNeeded.toLocaleString() + ' pts';
       ratingProgressBarEl.style.width = progress.progressPct + '%';
     } else if (submitted.length > 0 && !progress.nextRating) {
-      ratingProgressRowEl.style.display = 'block';
+      ratingProgressRowEl.style.visibility = 'visible';
       ratingProgressLabelEl.textContent = 'Top rating reached';
       ratingProgressBarEl.style.width = '100%';
     } else {
-      ratingProgressRowEl.style.display = 'none';
+      ratingProgressRowEl.style.visibility = 'hidden';
       ratingProgressLabelEl.textContent = '';
       ratingProgressBarEl.style.width = '0%';
     }

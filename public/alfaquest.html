@@ -5,136 +5,91 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Alfaquest | alfaword.games</title>
   <link rel="stylesheet" href="css/game.css">
-  <style>
-    :root{
-      --bg:#0f1724; --panel:#0b1220; --muted:#9aa6b2; --accent:#00a3ff; --success:#22c55e; --danger:#ff5c6c;
-      --card:#0f1727; --glass: rgba(255,255,255,0.03);
-    }
-    html,body{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-    body {
-      font-family: Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;
-      margin:0; padding:28px; background:linear-gradient(180deg,#071023 0%, #071827 100%); color:#e6eef6;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    }
-    .container{max-width:1100px;margin:0 auto}
-    h1{margin:0 0 12px;font-weight:700;letter-spacing:0.01em;font-size:clamp(1.5rem,3vw,2.2rem);color:#cbe7ff;text-shadow:0 2px 0 #17346c,0 4px 0 #10274f,0 10px 18px rgba(0,0,0,0.4)}
-    .controls{display:flex;gap:12px;align-items:center;margin:12px 0}
-    input[type="number"], input[type="text"]{padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:16px}
-    #countryInput{width:100%;max-width:420px;flex:0 1 420px;font-size:24px !important;line-height:1.3}
-    #countryInput::placeholder{font-size:24px}
-    button{background:var(--accent);color:#021023;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    #output{width:100%;height:260px;font-family:Menlo,monospace;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));border-radius:8px;padding:12px;overflow:auto;color:#cbe7ff}
-    .meta{display:flex;gap:12px;align-items:center}
-    .hl{color:var(--accent);font-weight:700}
-    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;margin-top:8px}
-    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#6ee7ff)}
-    #submittedList{margin:8px 0;padding-left:18px}
-    .footer-note{margin-top:18px;color:var(--muted);font-size:0.9rem}
-    .status-warning{color:#ffd966;font-weight:600}
-    .status-danger{color:var(--danger);font-weight:700}
-    .score-toggle{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:0.95rem}
-    .score-toggle input{accent-color:var(--accent)}
-    .score-panel{margin-top:12px;padding:12px;border-radius:10px;background:rgba(0,163,255,0.08);border:1px solid rgba(125,211,252,0.18)}
-    .score-panel strong{display:block;margin-bottom:4px}
-    .score-meta{color:#cbe7ff;font-size:0.95rem}
-    .rating-hero{margin-bottom:10px;padding:10px 12px;border-radius:8px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25)}
-    .rating-hero-label{font-size:1.35rem;font-weight:800;color:#86efac;letter-spacing:0.02em}
-    .rating-hero-sub{display:block;margin-top:2px;color:var(--muted);font-size:0.85rem;font-weight:500}
-    .score-details{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)}
-    .scoring-modal-panel{max-width:560px;margin:48px auto;background:#0f1727;border:1px solid rgba(125,211,252,0.18);border-radius:14px;padding:28px 32px;color:#e6eef6;position:relative}
-  </style>
-  <style>
-    @media (max-width: 800px){
-      body{padding:12px}
-      .container{max-width:100%;padding:0}
-      .controls{flex-direction:column;align-items:stretch}
-      .game-row{flex-direction:column;align-items:stretch}
-      input#countryInput{width:100%;max-width:100%;flex:1 1 100%;font-size:16px !important;line-height:1.3;padding:10px 12px;box-sizing:border-box;appearance:none;-webkit-appearance:none;margin-bottom:8px}
-      #countryInput::placeholder{font-size:16px}
-      button{width:100%}
-      .progress{height:8px}
-      #submittedList{max-height:220px;overflow:auto}
-      .score-panel{padding:10px}
-      .rating-hero-label{font-size:1.15rem}
-    }
-    @media (max-width: 480px){
-      body{padding:8px}
-      h1{font-size:1.35rem;margin-bottom:8px}
-      h2{font-size:1.05rem}
-      .instructions{font-size:0.9rem}
-      .score-panel{padding:8px;margin-top:8px}
-      .rating-hero{padding:8px 10px;margin-bottom:8px}
-      .rating-hero-label{font-size:1.05rem}
-      .scoring-modal-panel{margin:12px 8px;padding:18px 14px;border-radius:12px}
-      #submittedList{max-height:180px}
-    }
-  </style>
+  <link rel="stylesheet" href="css/game-shell.css">
 </head>
-<body>
-  <div class="container">
-  <h1>Alfaquest - Play</h1>
-  <p>Play the original Alfaquest game using the improved UI. <strong>Note:</strong> letters W &amp; X are ignored as starting letters because no countries begin with W or X.</p>
-
-  <div class="controls">
-    <div style="flex:1">
-      <em>Interactive alfaquest game — sequencing rule enforced.</em>
-    </div>
-    <label class="score-toggle">
-      <input id="scoreToggle" type="checkbox" />
-      <span>Show scoring</span>
-    </label>
-    <div style="margin-left:auto"><span id="status"></span></div>
-  </div>
-
-  <hr />
-  <h2>Play: Alfaquest</h2>
-  <div class="instructions" style="margin-bottom:10px;color:var(--muted)">
-    <strong>How to play:</strong> Alfaquest enforces a sequencing rule: each submission must start with the required letter determined from previous entries, and starting letters cannot repeat (W and X are ignored because no countries begin with those letters). Submissions must be valid country names from the list. The game auto-resets when no moves remain.
-    <div style="margin-top:6px"><a href="helpv2.html" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">Read the sequencing tutorial &#8599;</a></div>
-    <div><strong>Objective:</strong> Complete all 24 required starting letters using valid countries before you reach a dead-end.</div>
-  </div>
-  <div class="game-row">
-    <input id="countryInput" placeholder="Type a country name..." />
-    <button id="submitCountry">Submit</button>
-    <button id="resetLocal" class="ghost">Reset</button>
-  </div>
-  <div class="game-row game-row--board">
-    <div class="game-main">
-      <div class="letter-grid" id="letterGrid"></div>
-      <div class="progress"><i id="progressBar" style="width:0%"></i></div>
-    </div>
-    <div class="game-sidebar">
-      <div><strong id="remainingCountLabel">Remaining starts:</strong> <span id="remainingLetters">24</span></div>
-      <div id="bestScoreRow" class="score-meta" style="margin-top:6px">
-        <strong>High score:</strong> <span id="bestScore">0</span>
-        <div id="bestScoreMeta" style="color:var(--muted);font-size:0.85rem;margin-top:2px">No saved high score yet</div>
+<body class="game-page">
+  <div class="game-shell">
+    <header class="game-header">
+      <a class="game-back" href="index.html">&larr; Menu</a>
+      <div class="game-header-main">
+        <h1>Alfaquest - Play</h1>
+        <span class="game-mode-pill">Sequencing</span>
       </div>
-      <div id="scorePanel" class="score-panel" style="display:none">
-        <div id="alfaRatingHero" class="rating-hero" style="display:none">
-          <span id="alfaRatingLabel" class="rating-hero-label">—</span>
-          <span id="alfaRatingSub" class="rating-hero-sub">On-pace rating</span>
-        </div>
-        <div id="ratingProgressRow" style="display:none;margin-bottom:10px">
-          <div class="score-meta"><span id="ratingProgressLabel">Excellent in 1,200 pts</span></div>
-          <div class="progress" style="height:6px;margin-top:4px"><i id="ratingProgressBar" style="width:0%"></i></div>
-        </div>
-        <div class="score-meta"><strong>Score:</strong> <span id="totalScore">0</span></div>
-        <div class="score-meta">Last answer: <span id="lastScoreDelta">+0</span> pts</div>
-        <div class="score-details">
-          <div class="score-meta">Raw points: <span id="rawScore">0</span></div>
-          <div class="score-meta">Speed bonus (raw &rarr; score): <span id="speedBonus">0</span></div>
-          <div class="score-meta">Run time: <span id="elapsedTime">0:00</span> | Time factor: <span id="timeFactor">x1.00</span></div>
-        </div>
-        <div class="score-meta" style="margin-top:6px"><a href="#" id="scoringInfoLink" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">How scoring works &#8599;</a></div>
+      <div class="game-header-actions">
+        <label class="score-toggle">
+          <input id="scoreToggle" type="checkbox" />
+          <span>Show scoring</span>
+        </label>
+        <span id="status"></span>
       </div>
-      <div style="margin-top:8px"><span id="sessionInfo"></span></div>
-      <div class="footer-note">Submitted countries:</div>
-      <ul id="submittedList"></ul>
+    </header>
+
+    <details class="game-instructions">
+      <summary>How to play</summary>
+      <div class="game-instructions-body">
+        <p style="margin:0 0 8px">Each submission must start with the required letter from previous entries. Starting letters cannot repeat. W and X are ignored — no countries begin with those letters. Submissions must be valid country names from the list.</p>
+        <p style="margin:0 0 8px"><strong>Objective:</strong> Complete all 24 required starting letters before you reach a dead-end.</p>
+        <p style="margin:0"><a href="helpv2.html">Read the sequencing tutorial &#8599;</a></p>
+      </div>
+    </details>
+
+    <section class="game-card game-card--play">
+      <div class="game-row">
+        <input id="countryInput" placeholder="Type a country name..." />
+        <button id="submitCountry">Submit</button>
+        <button id="resetLocal" class="ghost">Reset</button>
+      </div>
+    </section>
+
+    <div class="game-row game-row--board">
+      <div class="game-main game-card game-card--board">
+        <div class="letter-grid" id="letterGrid"></div>
+        <div id="requiredLetterInfo" class="required-letter-banner"></div>
+        <div id="colourLegend" class="grid-legend grid-legend--inline">
+          <span class="grid-legend-title">Key</span>
+          <span class="grid-legend-chip"><span class="grid-legend-swatch available"></span>Available</span>
+          <span class="grid-legend-chip"><span class="grid-legend-swatch collected"></span>Used</span>
+          <span class="grid-legend-chip"><span class="grid-legend-swatch required"></span>Required</span>
+          <span class="grid-legend-chip"><span class="grid-legend-swatch ignored"></span>Ignored W/X</span>
+          <a href="helpv2.html">Tutorial &#8599;</a>
+        </div>
+        <div class="progress"><i id="progressBar" style="width:0%"></i></div>
+      </div>
+
+      <aside class="game-sidebar game-card">
+        <div class="sidebar-stat">
+          <strong id="remainingCountLabel">Remaining starts</strong>
+          <span id="remainingLetters">24</span>
+        </div>
+        <div id="bestScoreRow" class="score-meta" style="margin-bottom:8px">
+          <strong>High score:</strong> <span id="bestScore">0</span>
+          <div id="bestScoreMeta" style="color:var(--game-muted);font-size:0.85rem;margin-top:2px">No saved high score yet</div>
+        </div>
+        <div id="scorePanel" class="score-panel" style="display:none">
+          <div id="alfaRatingHero" class="rating-hero">
+            <span id="alfaRatingLabel" class="rating-hero-label">—</span>
+            <span id="alfaRatingSub" class="rating-hero-sub">On-pace rating</span>
+          </div>
+          <div id="ratingProgressRow" class="rating-progress-row">
+            <div class="score-meta"><span id="ratingProgressLabel">Excellent in 1,200 pts</span></div>
+            <div class="progress" style="height:6px;margin-top:4px"><i id="ratingProgressBar" style="width:0%"></i></div>
+          </div>
+          <div class="score-meta"><strong>Score:</strong> <span id="totalScore">0</span></div>
+          <div class="score-meta">Last answer: <span id="lastScoreDelta">+0</span> pts</div>
+          <div class="score-details">
+            <div class="score-meta">Raw points: <span id="rawScore">0</span></div>
+            <div class="score-meta">Speed bonus (raw &rarr; score): <span id="speedBonus">0</span></div>
+            <div class="score-meta">Run time: <span id="elapsedTime">0:00</span> | Time factor: <span id="timeFactor">x1.00</span></div>
+          </div>
+          <div class="score-meta" style="margin-top:6px"><a href="#" id="scoringInfoLink">How scoring works &#8599;</a></div>
+        </div>
+        <div style="margin-top:4px"><span id="sessionInfo"></span></div>
+        <div class="sidebar-section-title">Submitted countries</div>
+        <ul id="submittedList"></ul>
+      </aside>
     </div>
   </div>
-  <p style="margin:18px 0 0"><a href="index.html" style="color:#7dd3fc;text-decoration:none">&larr; Return to main menu</a></p>
-  </div>
+
   <script>
     window.ALFA_API_BASE = (location.hostname === '127.0.0.1' || location.hostname === 'localhost')
       ? ''
@@ -144,7 +99,6 @@
   <script>window.ALFAQUEST_MODE = true;</script>
   <script src="allletters-game.js"></script>
 
-  <!-- Scoring info modal -->
   <div id="scoringModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(7,16,35,0.82);backdrop-filter:blur(4px);overflow-y:auto">
     <div class="scoring-modal-panel">
       <button id="scoringModalClose" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#9aa6b2;font-size:1.4rem;cursor:pointer;line-height:1">&times;</button>
