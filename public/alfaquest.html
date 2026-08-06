@@ -42,20 +42,7 @@
     .rating-hero-label{font-size:1.35rem;font-weight:800;color:#86efac;letter-spacing:0.02em}
     .rating-hero-sub{display:block;margin-top:2px;color:var(--muted);font-size:0.85rem;font-weight:500}
     .score-details{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)}
-    .game-over-summary,.completion-summary{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:0.92rem;line-height:1.5}
-    .game-over-summary{background:rgba(255,92,108,0.1);border:1px solid rgba(255,92,108,0.35);color:#fecdd3}
-    .game-over-summary a{color:#7dd3fc}
-    .game-over-title{font-weight:800;color:#ff8a98;margin-bottom:6px}
-    .game-over-reason{color:#ffe4e6}
-    .game-over-examples{margin-top:6px;color:#fca5a5;font-size:0.88rem}
-    .game-over-hint{margin-top:8px;color:var(--muted);font-size:0.85rem}
-    .completion-summary{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35)}
-    .completion-title{font-weight:800;color:#86efac;margin-bottom:4px}
-    .completion-rating{font-size:1.35rem;font-weight:800;color:#bbf7d0;margin-bottom:8px}
-    .completion-stats{display:flex;flex-wrap:wrap;gap:8px 14px;color:#cbe7ff;font-size:0.9rem;margin-bottom:8px}
-    .completion-high-score{font-size:0.88rem;color:#86efac;margin-bottom:8px}
-    .completion-high-score.muted{color:var(--muted)}
-    .completion-copy-btn{background:rgba(34,197,94,0.25);color:#ecfdf5;border:1px solid rgba(134,239,172,0.45);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.88rem}
+    .scoring-modal-panel{max-width:560px;margin:48px auto;background:#0f1727;border:1px solid rgba(125,211,252,0.18);border-radius:14px;padding:28px 32px;color:#e6eef6;position:relative}
   </style>
   <style>
     @media (max-width: 800px){
@@ -68,6 +55,19 @@
       button{width:100%}
       .progress{height:8px}
       #submittedList{max-height:220px;overflow:auto}
+      .score-panel{padding:10px}
+      .rating-hero-label{font-size:1.15rem}
+    }
+    @media (max-width: 480px){
+      body{padding:8px}
+      h1{font-size:1.35rem;margin-bottom:8px}
+      h2{font-size:1.05rem}
+      .instructions{font-size:0.9rem}
+      .score-panel{padding:8px;margin-top:8px}
+      .rating-hero{padding:8px 10px;margin-bottom:8px}
+      .rating-hero-label{font-size:1.05rem}
+      .scoring-modal-panel{margin:12px 8px;padding:18px 14px;border-radius:12px}
+      #submittedList{max-height:180px}
     }
   </style>
 </head>
@@ -146,7 +146,7 @@
 
   <!-- Scoring info modal -->
   <div id="scoringModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(7,16,35,0.82);backdrop-filter:blur(4px);overflow-y:auto">
-    <div style="max-width:560px;margin:48px auto;background:#0f1727;border:1px solid rgba(125,211,252,0.18);border-radius:14px;padding:28px 32px;color:#e6eef6;position:relative">
+    <div class="scoring-modal-panel">
       <button id="scoringModalClose" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#9aa6b2;font-size:1.4rem;cursor:pointer;line-height:1">&times;</button>
       <h2 style="margin:0 0 16px;color:#cbe7ff;font-size:1.4rem">Scoring system</h2>
 

@@ -42,5 +42,15 @@ for (const { path, heading } of gamePages) {
       const viewportWidth = page.viewportSize()?.width ?? 390;
       expect(sidebarWidth).toBeGreaterThan(viewportWidth * 0.85);
     });
+
+    test('phone tier uses six-column letter grid', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.goto(path);
+
+      const columnCount = await page.locator('.letter-grid').evaluate((el) => {
+        return getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+      });
+      expect(columnCount).toBe(6);
+    });
   });
 }

@@ -158,6 +158,95 @@
   flex-shrink: 0;
 }
 
+.game-over-summary,
+.completion-summary {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.game-over-summary {
+  background: rgba(255, 92, 108, 0.1);
+  border: 1px solid rgba(255, 92, 108, 0.35);
+  color: #fecdd3;
+}
+
+.game-over-summary a {
+  color: #7dd3fc;
+}
+
+.game-over-title {
+  font-weight: 800;
+  color: #ff8a98;
+  margin-bottom: 6px;
+}
+
+.game-over-reason {
+  color: #ffe4e6;
+}
+
+.game-over-examples {
+  margin-top: 6px;
+  color: #fca5a5;
+  font-size: 0.88rem;
+}
+
+.game-over-hint {
+  margin-top: 8px;
+  color: #9aa6b2;
+  font-size: 0.85rem;
+}
+
+.completion-summary {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.completion-title {
+  font-weight: 800;
+  color: #86efac;
+  margin-bottom: 4px;
+}
+
+.completion-rating {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #bbf7d0;
+  margin-bottom: 8px;
+}
+
+.completion-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #cbe7ff;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.completion-high-score {
+  font-size: 0.88rem;
+  color: #86efac;
+  margin-bottom: 8px;
+}
+
+.completion-high-score.muted {
+  color: #9aa6b2;
+}
+
+.completion-copy-btn {
+  background: rgba(34, 197, 94, 0.25);
+  color: #ecfdf5;
+  border: 1px solid rgba(134, 239, 172, 0.45);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
 @media (max-width: 800px) {
   .letter-grid {
     grid-template-columns: repeat(7, 1fr);
@@ -176,5 +265,61 @@
   .game-sidebar {
     width: 100%;
     max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .letter-cell {
+    padding: 6px 4px;
+    font-size: 0.78rem;
+    border-radius: 4px;
+  }
+
+  .required-letter-pill {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .required-letter-pill strong {
+    font-size: 1rem;
+  }
+
+  .grid-legend {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+
+  .game-row {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .game-over-summary,
+  .completion-summary {
+    margin-top: 8px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  .completion-rating {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+
+  .completion-stats {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+
+  .completion-copy-btn {
+    width: 100%;
+    padding: 10px 12px;
   }
 }
