@@ -158,6 +158,19 @@
   flex-shrink: 0;
 }
 
+button {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+
+.completion-copy-btn {
+  min-height: 44px;
+}
+
+#countryInput {
+  min-height: 44px;
+}
+
 .game-over-summary,
 .completion-summary {
   margin-top: 12px;
@@ -265,6 +278,12 @@
   .game-sidebar {
     width: 100%;
     max-width: none;
+  }
+
+  #countryInput {
+    min-height: 44px;
+    height: auto;
+    max-height: none;
   }
 }
 

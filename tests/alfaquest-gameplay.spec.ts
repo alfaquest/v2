@@ -50,6 +50,26 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#colourLegend')).toBeVisible();
   });
 
+  test('country input has mobile keyboard attributes', async ({ page }) => {
+    const input = page.locator('#countryInput');
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    await expect(input).toHaveAttribute('autocapitalize', 'words');
+    await expect(input).toHaveAttribute('inputmode', 'text');
+    await expect(input).toHaveAttribute('enterkeyhint', 'go');
+  });
+
+  test('buttons meet minimum touch target height on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const submitHeight = await page.locator('#submitCountry').evaluate(
+      (el) => el.getBoundingClientRect().height
+    );
+    const resetHeight = await page.locator('#resetLocal').evaluate(
+      (el) => el.getBoundingClientRect().height
+    );
+    expect(submitHeight).toBeGreaterThanOrEqual(44);
+    expect(resetHeight).toBeGreaterThanOrEqual(44);
+  });
+
   test('rejects invalid country spelling', async ({ page }) => {
     await page.locator('#countryInput').fill('Not A Real Country');
     await page.locator('#submitCountry').click();

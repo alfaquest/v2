@@ -425,6 +425,27 @@ function maybeShowStartMilestones(pct, completedStarts){
   }
 }
 
+function configureCountryInput(){
+  if (typeof document === 'undefined') return;
+  const input = document.getElementById('countryInput');
+  if (!input) return;
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocapitalize', 'words');
+  input.setAttribute('spellcheck', 'false');
+  input.setAttribute('enterkeyhint', 'go');
+  input.setAttribute('inputmode', 'text');
+}
+
+function scrollSubmittedListIntoView(){
+  if (typeof document === 'undefined') return;
+  const list = document.getElementById('submittedList');
+  if (!list || list.children.length === 0) return;
+  const lastItem = list.lastElementChild;
+  if (lastItem && typeof lastItem.scrollIntoView === 'function') {
+    lastItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
 function getElapsedSeconds(){
   if (runStartedAtMs === null) return 0;
   const endMs = runEndedAtMs !== null ? runEndedAtMs : Date.now();
@@ -1378,6 +1399,7 @@ function addCountryLocal(name){
       for (const ch of n) if (ch >= 'a' && ch <= 'z') usedLetters.add(ch);
       updateUI();
       saveLocal();
+      scrollSubmittedListIntoView();
 
       gameOver = true;
       const submitBtn = document.getElementById('submitCountry');
@@ -1416,6 +1438,7 @@ function addCountryLocal(name){
   }
   updateUI();
   saveLocal();
+  scrollSubmittedListIntoView();
 }
 
 function saveLocal(){
@@ -1545,6 +1568,7 @@ function recomputeUsedStarts(){
 // Wire up UI
 window.addEventListener('load', ()=>{
   ensureColourLegend();
+  configureCountryInput();
   loadHighScore(); loadLocal(); updateUI();
   const input = document.getElementById('countryInput');
   const scoreToggle = document.getElementById('scoreToggle');
