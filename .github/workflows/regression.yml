@@ -1,24 +1,25 @@
 name: Regression tests
 
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
   workflow_dispatch:
 
-# Private repos on GitHub Free allow only one concurrent job. A per-branch
-# concurrency group lets multiple pushes queue separate runs that all wait for
-# a runner and then fail after ~15 minutes. One repo-wide group cancels stale
-# runs immediately when a newer commit arrives.
+# Private repos on GitHub Free allow only one concurrent job. Keep one
+# repo-wide group so newer runs cancel stale queued ones.
 concurrency:
   group: regression-tests-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
 
@@ -43,30 +44,11 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  deploy:
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Required repo secrets (Settings → Secrets and variables → Actions):
-      #   CLOUDFLARE_API_TOKEN — Cloudflare API token with "Cloudflare Pages: Edit"
-      #   CLOUDFLARE_ACCOUNT_ID — e.g. 06d216065309310baafe29018273f4b2
-      # If deploy is not configured, use manual deploy: npm run deploy
+      # Single job avoids a second runner acquisition on the one free slot.
+      # Required repo secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+      # Manual deploy fallback: npm run deploy
       - name: Deploy to Cloudflare Pages (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
