@@ -75,16 +75,17 @@ function normalize(s){ return String(s||'').trim().toLowerCase(); }
 const API_BASE = (typeof window !== 'undefined' && typeof window.ALFA_API_BASE === 'string')
   ? window.ALFA_API_BASE.replace(/\/+$/, '')
   : '';
-const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v4';
-const ALFA_SCORING_VERSION = 'v4_honest_scale';
+const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v5';
+const ALFA_SCORING_VERSION = 'v5_position_tuned';
 const ALFA_RATING_TIERS = Object.freeze([
-  { min: 46000, label: 'Legendary' },
-  { min: 44000, label: 'Excellent' },
-  { min: 42000, label: 'Very good' },
-  { min: 40000, label: 'Good' },
-  { min: 38000, label: 'Fair' },
+  { min: 29000, label: 'Legendary' },
+  { min: 27500, label: 'Excellent' },
+  { min: 26000, label: 'Very good' },
+  { min: 25000, label: 'Good' },
+  { min: 24000, label: 'Fair' },
   { min: 0, label: 'Completed' }
 ]);
+const ALFA_POSITION_BONUS_PER_MOVE = 50;
 const ALFA_TIME_TARGET_PER_MOVE_SECONDS = 12;
 const ALFA_TIME_TARGET_MIN_SECONDS = 120;
 const ALFA_TIME_FACTOR_MIN = 0.90;
@@ -122,6 +123,7 @@ let liveScoreTimerId = null;
 let speedBonuses = [];
 let finalScoreDeltas = [];
 let currentEntryStartedAtMs = null;
+let lastMilestonePct = 0;
 
 function isAlfaScoringMode(){
   return isAlfaMode();
@@ -132,7 +134,7 @@ function scoreWord(word, moveNumber){
   // First letter scores its base tier value
   const firstCh = n.charAt(0);
   const firstLetterScore = (firstCh && LETTER_SCORES[firstCh]) ? (LETTER_SCORES[firstCh] * ALFA_LETTER_SCORE_MULTIPLIER) : 0;
-  const positionBonus = moveNumber > 0 ? moveNumber * 100 : 0;
+  const positionBonus = moveNumber > 0 ? moveNumber * ALFA_POSITION_BONUS_PER_MOVE : 0;
   return firstLetterScore + positionBonus;
 }
 
@@ -277,10 +279,150 @@ function ensureColourLegend(){
     '<div class="grid-legend-row"><span class="grid-legend-swatch available"></span><span>Bright: still available</span></div>' +
     '<div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already used</span></div>' +
     '<div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next letter</span></div>' +
-    '<div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>';
+    '<div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>' +
+    '<div class="grid-legend-row" style="margin-top:8px"><a href="helpv2.html" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">Sequencing tutorial &#8599;</a></div>';
 
   const anchor = document.getElementById('requiredLetterInfo') || gridEl;
   anchor.insertAdjacentElement('afterend', legend);
+}
+
+function formatDisplayCountry(nameLower){
+  const displayMap = (typeof window !== 'undefined' && window._alfa_country_display)
+    ? window._alfa_country_display
+    : null;
+  if (displayMap && displayMap[nameLower]) return displayMap[nameLower];
+  return String(nameLower || '').split(/(\s|-|\.|,)/).map(part => {
+    if (part.match(/\s|\-|\.|,/)) return part;
+    return part.length ? (part.charAt(0).toUpperCase() + part.slice(1)) : part;
+  }).join('');
+}
+
+function ensureGameOverSummary(){
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('gameOverSummary')) return;
+  const anchor = document.getElementById('colourLegend') || document.getElementById('requiredLetterInfo');
+  if (!anchor) return;
+  const panel = document.createElement('div');
+  panel.id = 'gameOverSummary';
+  panel.className = 'game-over-summary';
+  panel.style.display = 'none';
+  anchor.insertAdjacentElement('afterend', panel);
+}
+
+function hideGameOverSummary(){
+  const el = document.getElementById('gameOverSummary');
+  if (el) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  }
+}
+
+function renderGameOverSummary(summary){
+  if (typeof document === 'undefined' || !summary) return;
+  ensureGameOverSummary();
+  const el = document.getElementById('gameOverSummary');
+  if (!el) return;
+  const letter = (summary.required || '?').toUpperCase();
+  let examplesHtml = '';
+  if (summary.examples && summary.examples.length > 0) {
+    const names = summary.examples.map(c => formatDisplayCountry(c)).join(', ');
+    examplesHtml =
+      '<div class="game-over-examples">Still on the list for ' + escapeHtml(letter) + ': ' +
+      escapeHtml(names) + '</div>';
+  }
+  el.innerHTML =
+    '<div class="game-over-title">Game over — needed <strong>' + escapeHtml(letter) + '</strong></div>' +
+    '<div class="game-over-reason">' + escapeHtml(summary.reason) + '</div>' +
+    examplesHtml +
+    '<div class="game-over-hint">Tap Reset to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
+  el.style.display = 'block';
+}
+
+function ensureCompletionSummary(){
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('completionSummary')) return;
+  const anchor = document.getElementById('bestScoreRow') || document.getElementById('scorePanel');
+  if (!anchor || !anchor.parentNode) return;
+  const panel = document.createElement('div');
+  panel.id = 'completionSummary';
+  panel.className = 'completion-summary';
+  panel.style.display = 'none';
+  anchor.parentNode.insertBefore(panel, anchor);
+}
+
+function hideCompletionSummary(){
+  const el = document.getElementById('completionSummary');
+  if (el) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  }
+}
+
+function buildShareableResultLine(){
+  if (!isAlfaMode() || !isCompletedAlfaRun()) return '';
+  const breakdown = getScoreBreakdown();
+  const rating = getAlfaScoreRating(breakdown.finalScore);
+  const timeLabel = breakdown.elapsedSeconds > 0
+    ? formatElapsedSeconds(breakdown.elapsedSeconds)
+    : '';
+  const site = (typeof location !== 'undefined' && location.hostname) ? location.hostname : 'alfaword.games';
+  return 'Alfaquest — ' + rating + ' — ' + breakdown.finalScore.toLocaleString() + ' pts, ' +
+    submitted.length + ' countries' + (timeLabel ? ', ' + timeLabel : '') + ' — ' + site;
+}
+
+function copyShareableResult(){
+  const line = buildShareableResultLine();
+  if (!line) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(line).then(() => {
+      showInfoToast('Result copied to clipboard', 2000);
+    }).catch(() => {
+      showInfoToast(line, 5000);
+    });
+    return;
+  }
+  showInfoToast(line, 5000);
+}
+
+function renderCompletionSummary(beatHighScore){
+  if (typeof document === 'undefined' || !isAlfaMode()) return;
+  ensureCompletionSummary();
+  const el = document.getElementById('completionSummary');
+  if (!el) return;
+  lockRunEndTime();
+  const breakdown = getScoreBreakdown();
+  const rating = getAlfaScoreRating(breakdown.finalScore);
+  const timeLabel = breakdown.elapsedSeconds > 0
+    ? formatElapsedSeconds(breakdown.elapsedSeconds)
+    : '—';
+  const highScoreNote = beatHighScore
+    ? '<div class="completion-high-score">New high score!</div>'
+    : (highScoreRecord ? '<div class="completion-high-score muted">High score: ' +
+      highScoreRecord.score.toLocaleString() + ' pts</div>' : '');
+  el.innerHTML =
+    '<div class="completion-title">Victory — all 24 starting letters</div>' +
+    '<div class="completion-rating">' + escapeHtml(rating) + '</div>' +
+    '<div class="completion-stats">' +
+    '<span><strong>Score:</strong> ' + breakdown.finalScore.toLocaleString() + '</span>' +
+    '<span><strong>Countries:</strong> ' + submitted.length + '</span>' +
+    '<span><strong>Time:</strong> ' + escapeHtml(timeLabel) + '</span>' +
+    '</div>' +
+    highScoreNote +
+    '<button type="button" id="copyResultBtn" class="completion-copy-btn">Copy result</button>';
+  el.style.display = 'block';
+  const copyBtn = document.getElementById('copyResultBtn');
+  if (copyBtn) copyBtn.addEventListener('click', copyShareableResult);
+}
+
+function maybeShowStartMilestones(pct, completedStarts){
+  const thresholds = [25, 50, 75];
+  for (const threshold of thresholds) {
+    if (lastMilestonePct < threshold && pct >= threshold) {
+      showInfoToast(completedStarts + ' of 24 starting letters (' + threshold + '%)', 2800);
+      lastMilestonePct = threshold;
+      break;
+    }
+  }
 }
 
 function getElapsedSeconds(){
@@ -558,12 +700,13 @@ function renderHighScore(){
   if (highScoreRecord) {
     scoreEl.textContent = highScoreRecord.score.toLocaleString();
     const rating = getAlfaScoreRating(highScoreRecord.score);
+    const answersLabel = highScoreRecord.moves + (highScoreRecord.moves === 1 ? ' answer' : ' answers');
+    const durationLabel = highScoreRecord.elapsedSeconds > 0
+      ? formatElapsedSeconds(highScoreRecord.elapsedSeconds)
+      : '';
     if (highScoreRecord.moves > 0) {
-      const answersLabel = highScoreRecord.moves + (highScoreRecord.moves === 1 ? ' answer' : ' answers');
-      const durationLabel = highScoreRecord.elapsedSeconds > 0
-        ? ' in ' + formatElapsedSeconds(highScoreRecord.elapsedSeconds)
-        : '';
-      metaEl.textContent = rating + ' — ' + answersLabel + durationLabel;
+      metaEl.textContent = rating + ' — ' + answersLabel +
+        (durationLabel ? ' · Best time: ' + durationLabel : '');
     } else {
       metaEl.textContent = rating;
     }
@@ -827,6 +970,9 @@ function updateUI(){
     ? Math.round(((GAME_ALPH.length - remainingCount) / GAME_ALPH.length) * 100)
     : Math.round(((26 - remainingCount) / 26) * 100);
   const bar = document.getElementById('progressBar'); if (bar) bar.style.width = pct + '%';
+  if (isAlfa && !gameOver && !completionShown && remainingCount > 0) {
+    maybeShowStartMilestones(pct, GAME_ALPH.length - remainingCount);
+  }
   // show required next-start letter
   if (isAlfa || isNormal || isSeq || isSeqFull){
     try{
@@ -849,20 +995,25 @@ function updateUI(){
         }
         if (!gameOver){
           gameOver = true;
-          // give a specific reason why there are no valid countries
+          hideCompletionSummary();
           const letter = (req || '?').toUpperCase();
           const allForLetter = COUNTRY_LIST.filter(c => c && c.charAt(0) === (req||'').toLowerCase());
           const unusedForLetter = allForLetter.filter(c => submitted.indexOf(c) === -1);
           let reason;
           if (allForLetter.length === 0){
-            reason = 'There are no countries beginning with "' + letter + '" in the list.';
+            reason = 'No countries on the list begin with "' + letter + '".';
           } else if (unusedForLetter.length === 0){
-            reason = 'All countries beginning with "' + letter + '" have already been used.';
+            reason = 'Every country beginning with "' + letter + '" has already been submitted.';
           } else {
             reason = (isAlfa || isNormal)
-              ? 'All remaining countries beginning with "' + letter + '" are no longer valid from this position.'
+              ? 'No remaining country beginning with "' + letter + '" can continue the chain from here.'
               : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.';
           }
+          renderGameOverSummary({
+            required: req || '?',
+            reason,
+            examples: unusedForLetter
+          });
           showResetRequiredToast('Game over — required start is "' + letter + '". ' + reason, 'error');
         }
         if (submitBtn) submitBtn.disabled = true;
@@ -870,6 +1021,7 @@ function updateUI(){
       } else {
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
         gameOver = false;
+        hideGameOverSummary();
         if (submitBtn) submitBtn.disabled = false;
         if (input) input.disabled = false;
       }
@@ -877,7 +1029,13 @@ function updateUI(){
       if (e && e.message && e.message.indexOf('GAME OVER') !== -1){
         if (!gameOver){
           gameOver = true;
-          showResetRequiredToast(e.message, 'error');
+          hideCompletionSummary();
+          const lastCountry = submitted.length ? submitted[submitted.length - 1] : '';
+          const displayName = lastCountry ? formatDisplayCountry(lastCountry) : 'your last answer';
+          const reason = 'No unused starting letter remains inside "' + displayName +
+            '" to determine the next required letter.';
+          renderGameOverSummary({ required: '?', reason, examples: [] });
+          showResetRequiredToast(e.message + ' ' + reason, 'error');
         }
         const submitBtn = document.getElementById('submitCountry');
         const input = document.getElementById('countryInput');
@@ -918,7 +1076,9 @@ function updateUI(){
   if ((isAlfa && remainingCount === 0) || (isSeq && isSequenceModeComplete()) || (isSeqFull && remainingLetters.length === 0) || (!isAlfa && !isSeq && !isSeqFull && remainingLetters.length === 0)) {
     if (!completionShown){
       completionShown = true;
-      if (isAlfa) maybeUpdateHighScore();
+      hideGameOverSummary();
+      const beatHighScore = isAlfa ? maybeUpdateHighScore() : false;
+      if (isAlfa) renderCompletionSummary(beatHighScore);
       showResetRequiredToast(getCompletionToastMessage(), 'success');
     }
   }
@@ -1360,7 +1520,10 @@ function resetLocal(){
   }
   renderSessionInfo(null);
   lastRenderedRequiredLetter = null;
+  lastMilestonePct = 0;
   gameOver = false;
+  hideGameOverSummary();
+  hideCompletionSummary();
   // restore ignored starts (w,x) and recompute from empty submitted
   recomputeUsedStarts();
   // re-enable inputs

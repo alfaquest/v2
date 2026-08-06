@@ -1,5 +1,32 @@
 import { test, expect } from '@playwright/test';
 
+const WINNING_SEQUENCE = [
+  'Antigua and Barbuda',
+  'North Macedonia',
+  'Oman',
+  'Marshall Islands',
+  'Republic of the Congo',
+  'Equatorial Guinea',
+  'Qatar',
+  'Trinidad and Tobago',
+  'Ivory Coast',
+  'Vatican City',
+  'Central African Republic',
+  'Liechtenstein',
+  'Honduras',
+  'Denmark',
+  'Kazakhstan',
+  'Zimbabwe',
+  'Burkina Faso',
+  'United Arab Emirates',
+  'South Africa',
+  'Fiji',
+  'Japan',
+  'Papua New Guinea',
+  'Germany',
+  'Yemen',
+];
+
 async function submitCountries(page: import('@playwright/test').Page, countries: string[]) {
   for (const country of countries) {
     await page.locator('#countryInput').fill(country);
@@ -55,6 +82,8 @@ test.describe('Alfaquest gameplay', () => {
 
     await expect(page.locator('#submittedList')).toContainText('Malta');
     await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);
+    await expect(page.locator('#gameOverSummary')).toBeVisible();
+    await expect(page.locator('#gameOverSummary')).toContainText(/needed/i);
     await expect(page.locator('#submitCountry')).toBeDisabled();
     await expect(page.locator('#countryInput')).toBeDisabled();
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');
@@ -67,5 +96,15 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#requiredLetterInfo')).toContainText('Y');
     await expect(page.locator('#submitCountry')).toBeEnabled();
     await expect(page.locator('#remainingLetters')).toHaveText('19');
+  });
+
+  test('completes all 24 starting letters with a known winning sequence', async ({ page }) => {
+    test.setTimeout(120_000);
+    await submitCountries(page, WINNING_SEQUENCE);
+
+    await expect(page.locator('#remainingLetters')).toHaveText('0');
+    await expect(page.locator('#completionSummary')).toBeVisible();
+    await expect(page.locator('#completionSummary')).toContainText(/Victory|24 starting letters/i);
+    await expect(page.locator('#submittedList')).toContainText('Yemen');
   });
 });

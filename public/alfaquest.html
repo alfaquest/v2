@@ -43,6 +43,20 @@
     .rating-hero-label{font-size:1.35rem;font-weight:800;color:#86efac;letter-spacing:0.02em}
     .rating-hero-sub{display:block;margin-top:2px;color:var(--muted);font-size:0.85rem;font-weight:500}
     .score-details{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)}
+    .game-over-summary,.completion-summary{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:0.92rem;line-height:1.5}
+    .game-over-summary{background:rgba(255,92,108,0.1);border:1px solid rgba(255,92,108,0.35);color:#fecdd3}
+    .game-over-summary a{color:#7dd3fc}
+    .game-over-title{font-weight:800;color:#ff8a98;margin-bottom:6px}
+    .game-over-reason{color:#ffe4e6}
+    .game-over-examples{margin-top:6px;color:#fca5a5;font-size:0.88rem}
+    .game-over-hint{margin-top:8px;color:var(--muted);font-size:0.85rem}
+    .completion-summary{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35)}
+    .completion-title{font-weight:800;color:#86efac;margin-bottom:4px}
+    .completion-rating{font-size:1.35rem;font-weight:800;color:#bbf7d0;margin-bottom:8px}
+    .completion-stats{display:flex;flex-wrap:wrap;gap:8px 14px;color:#cbe7ff;font-size:0.9rem;margin-bottom:8px}
+    .completion-high-score{font-size:0.88rem;color:#86efac;margin-bottom:8px}
+    .completion-high-score.muted{color:var(--muted)}
+    .completion-copy-btn{background:rgba(34,197,94,0.25);color:#ecfdf5;border:1px solid rgba(134,239,172,0.45);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.88rem}
   </style>
   <style>
     @media (max-width: 800px){
@@ -77,7 +91,8 @@
   <hr />
   <h2>Play: Alfaquest</h2>
   <div class="instructions" style="margin-bottom:10px;color:var(--muted)">
-    <strong>How to play:</strong> Alfaquest enforces a sequencing rule: each submission must start with the required letter determined from previous entries, and starting letters cannot repeat (W and X are ignored because no countries begin with those letters). Submissions must be valid country names and should add at least one new letter. The game auto-resets when no moves remain.
+    <strong>How to play:</strong> Alfaquest enforces a sequencing rule: each submission must start with the required letter determined from previous entries, and starting letters cannot repeat (W and X are ignored because no countries begin with those letters). Submissions must be valid country names from the list. The game auto-resets when no moves remain.
+    <div style="margin-top:6px"><a href="helpv2.html" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">Read the sequencing tutorial &#8599;</a></div>
     <div><strong>Objective:</strong> Complete all 24 required starting letters using valid countries before you reach a dead-end.</div>
   </div>
   <div class="game-row">
@@ -139,7 +154,7 @@
       <h3 style="color:#7dd3fc;margin:18px 0 8px;font-size:1rem">How your score works</h3>
       <p style="color:#cbe7ff;margin:0 0 6px">Each answer adds points to your run score. Your on-pace rating updates live as you play.</p>
       <ol style="color:#cbe7ff;margin:0 0 12px;padding-left:20px;line-height:1.8">
-        <li><strong>Raw points</strong> = (starting letter value &times; 2) + position bonus for each submission.</li>
+        <li><strong>Raw points</strong> = (starting letter value &times; 2) + position bonus (move number &times; 50) for each submission.</li>
         <li><strong>Time factor</strong> adjusts raw points based on run time vs target (12 seconds per answer, minimum 120 seconds), capped between 0.90 and 1.10.</li>
         <li><strong>Speed bonus</strong> rewards fast typing per country (shown as its contribution to your score).</li>
         <li><strong>Final score</strong> = 60% letter/raw influence + 40% timing influence. The number beside each country is how much that answer added.</li>
@@ -148,12 +163,12 @@
       <h3 style="color:#7dd3fc;margin:18px 0 8px;font-size:1rem">Rating bands</h3>
       <p style="color:#cbe7ff;margin:0 0 6px">Your on-pace rating shows during the run. The final rating is locked in when all 24 starting letters are completed.</p>
       <ul style="color:#cbe7ff;margin:0 0 12px;padding-left:20px;line-height:1.8">
-        <li><strong>Legendary</strong> — 46,000+</li>
-        <li><strong>Excellent</strong> — 44,000-45,999</li>
-        <li><strong>Very good</strong> — 42,000-43,999</li>
-        <li><strong>Good</strong> — 40,000-41,999</li>
-        <li><strong>Fair</strong> — 38,000-39,999</li>
-        <li><strong>Completed</strong> — below 38,000</li>
+        <li><strong>Legendary</strong> — 29,000+</li>
+        <li><strong>Excellent</strong> — 27,500-28,999</li>
+        <li><strong>Very good</strong> — 26,000-27,499</li>
+        <li><strong>Good</strong> — 25,000-25,999</li>
+        <li><strong>Fair</strong> — 24,000-24,999</li>
+        <li><strong>Completed</strong> — below 24,000</li>
       </ul>
 
       <h3 style="color:#7dd3fc;margin:18px 0 8px;font-size:1rem">Starting letter values (effective)</h3>
