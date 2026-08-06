@@ -43,9 +43,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Cloudflare Pages
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Required repo secrets:
+      #   CLOUDFLARE_API_TOKEN — Cloudflare API token with "Cloudflare Pages: Edit"
+      #   CLOUDFLARE_ACCOUNT_ID — e.g. 06d216065309310baafe29018273f4b2
+      # One-time: run scripts/fix-pages-production-branch.sh so production_branch=main
+      - name: Deploy to Cloudflare Pages (production)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy public --project-name=alfaquest-pages
+          wranglerVersion: '4'
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy public --project-name=alfaquest-pages --branch=main --commit-hash=${{ github.sha }}

@@ -10,11 +10,12 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:install-browsers": "playwright install chrome",
-    "deploy": "npx wrangler pages deploy public --project-name=alfaquest-pages",
-    "deploy:pages": "npx wrangler pages deploy public --project-name=alfaquest-pages"
+    "deploy": "bash scripts/deploy-production.sh",
+    "deploy:pages": "bash scripts/deploy-production.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
-    "serve": "^14.2.4"
+    "serve": "^14.2.4",
+    "wrangler": "^4.119.0"
   }
 }
