@@ -204,16 +204,43 @@ function ensureSessionInfoBadgeStyles(){
   document.head.appendChild(style);
 }
 
+function ensureRequiredLetterBanner(){
+  if (typeof document === 'undefined') return;
+  const gridEl = document.getElementById('letterGrid');
+  if (!gridEl || !gridEl.parentNode) return;
+  if (document.getElementById('requiredLetterInfo')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'requiredLetterInfo';
+  banner.className = 'required-letter-banner';
+  gridEl.insertAdjacentElement('afterend', banner);
+}
+
 function renderSessionInfo(requiredLetter, statusText, pulseRequired){
   if (typeof document === 'undefined') return;
   ensureSessionInfoBadgeStyles();
+  ensureRequiredLetterBanner();
   const si = document.getElementById('sessionInfo');
-  if (!si) return;
+  const requiredEl = document.getElementById('requiredLetterInfo');
 
   const hasSession = !!sessionName;
   const hasRequired = !!requiredLetter;
   const hasStatus = !!statusText;
-  if (!hasSession && !hasRequired && !hasStatus) {
+  const clearAll = !hasSession && !hasRequired && !hasStatus && arguments.length <= 1;
+
+  if (requiredEl) {
+    if (hasRequired) {
+      const pulseClass = pulseRequired ? ' required-pill-pulse' : '';
+      requiredEl.innerHTML =
+        '<span class="required-letter-pill' + pulseClass + '">Next country must start with <strong>' +
+        escapeHtml(String(requiredLetter).toUpperCase()) + '</strong></span>';
+    } else if (clearAll) {
+      requiredEl.innerHTML = '';
+    }
+  }
+
+  if (!si) return;
+  if (clearAll) {
     si.innerHTML = '';
     return;
   }
@@ -222,10 +249,6 @@ function renderSessionInfo(requiredLetter, statusText, pulseRequired){
   if (hasSession) {
     pills.push('<span style="display:inline-block;margin:0 8px 6px 0;padding:3px 9px;border-radius:999px;border:1px solid rgba(125,211,252,0.35);background:rgba(56,189,248,0.12);color:#cbe7ff;font-size:0.8rem;font-weight:700;letter-spacing:0.2px">Session: ' + escapeHtml(sessionName) + '</span>');
   }
-  if (hasRequired) {
-    const pulseClass = pulseRequired ? ' required-pill-pulse' : '';
-    pills.push('<span class="' + pulseClass.trim() + '" style="display:inline-block;margin:0 8px 6px 0;padding:4px 11px;border-radius:999px;border:1px solid rgba(254,240,138,0.85);background:linear-gradient(135deg,#fde047,#f59e0b);color:#1a1202;font-size:0.82rem;font-weight:900;letter-spacing:0.3px;text-transform:uppercase;box-shadow:0 0 12px rgba(245,158,11,0.35)">Required: ' + escapeHtml(String(requiredLetter).toUpperCase()) + '</span>');
-  }
   if (hasStatus) {
     pills.push('<span style="display:inline-block;margin:0 8px 6px 0;padding:3px 9px;border-radius:999px;border:1px solid rgba(148,163,184,0.35);background:rgba(148,163,184,0.12);color:#d1d9e2;font-size:0.8rem;font-weight:700">' + escapeHtml(statusText) + '</span>');
   }
@@ -233,47 +256,31 @@ function renderSessionInfo(requiredLetter, statusText, pulseRequired){
   si.innerHTML = pills.join('');
 }
 
-function ensureGridLegend(){
+function ensureColourLegend(){
   if (typeof document === 'undefined') return;
   const gridEl = document.getElementById('letterGrid');
   if (!gridEl || !gridEl.parentNode) return;
-  if (document.getElementById('gridLegend')) return;
+
+  ensureRequiredLetterBanner();
+
+  const oldSubmittedLegend = document.getElementById('submittedLegend');
+  if (oldSubmittedLegend) oldSubmittedLegend.remove();
+  const oldGridLegend = document.getElementById('gridLegend');
+  if (oldGridLegend) oldGridLegend.remove();
+  if (document.getElementById('colourLegend')) return;
 
   const legend = document.createElement('div');
-  legend.id = 'gridLegend';
+  legend.id = 'colourLegend';
   legend.className = 'grid-legend';
   legend.innerHTML =
-    '<div class="grid-legend-title">Grid colour key</div>' +
+    '<div class="grid-legend-title">Colour key</div>' +
     '<div class="grid-legend-row"><span class="grid-legend-swatch available"></span><span>Bright: still available</span></div>' +
-    '<div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already collected or used</span></div>' +
-    '<div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next starting letter</span></div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already used</span></div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next letter</span></div>' +
     '<div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>';
 
-  gridEl.insertAdjacentElement('afterend', legend);
-}
-
-function ensureSubmittedLegend(){
-  if (typeof document === 'undefined') return;
-  const listEl = document.getElementById('submittedList');
-  if (!listEl || !listEl.parentNode) return;
-  if (document.getElementById('submittedLegend')) return;
-
-  const legend = document.createElement('div');
-  legend.id = 'submittedLegend';
-  legend.style.margin = '8px 0 8px';
-  legend.style.padding = '8px 10px';
-  legend.style.borderRadius = '10px';
-  legend.style.border = '1px solid rgba(125,211,252,0.18)';
-  legend.style.background = 'rgba(15, 23, 39, 0.5)';
-  legend.style.fontSize = '0.82rem';
-  legend.style.lineHeight = '1.5';
-  legend.innerHTML =
-    '<div style="color:#cbe7ff;font-weight:800;margin-bottom:4px">Answer list colour key</div>' +
-    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle"></span>Green: letter already used before that submission</div>' +
-    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fbbf24;margin-right:6px;vertical-align:middle"></span>Gold: current required letter highlight</div>' +
-    '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle"></span>Red: ignored letter (W or X)</div>';
-
-  listEl.parentNode.insertBefore(legend, listEl);
+  const anchor = document.getElementById('requiredLetterInfo') || gridEl;
+  anchor.insertAdjacentElement('afterend', legend);
 }
 
 function getElapsedSeconds(){
@@ -742,8 +749,7 @@ function scheduleGameOverReset(delayMs){
 }
 
 function updateUI(){
-  ensureSubmittedLegend();
-  ensureGridLegend();
+  ensureColourLegend();
   const usedArr = Array.from(usedLetters).sort();
   const isAlfa = isAlfaMode();
   const isEasyFill = isEasyAlfafillMode();
@@ -1058,7 +1064,7 @@ function formatDisplayWithHighlights(nameLower, highlights, startLetter, activeL
       } else if (IGNORED.indexOf(lower) !== -1){
         out += '<span class="hl" style="color:#ef4444">' + esc(ch) + '</span>';
       } else if (highlights.has(lower)){
-        out += '<span class="hl" style="color:#22c55e">' + esc(ch) + '</span>';
+        out += '<span class="hl" style="color:#64748b;text-decoration:line-through">' + esc(ch) + '</span>';
       } else {
         out += esc(ch);
       }
@@ -1367,8 +1373,7 @@ function recomputeUsedStarts(){
 
 // Wire up UI
 window.addEventListener('load', ()=>{
-  ensureSubmittedLegend();
-  ensureGridLegend();
+  ensureColourLegend();
   loadHighScore(); loadLocal(); updateUI();
   const input = document.getElementById('countryInput');
   const scoreToggle = document.getElementById('scoreToggle');

@@ -10,10 +10,10 @@ test.describe('Alfaquest gameplay', () => {
     await page.locator('#submitCountry').click();
 
     await expect(page.locator('#submittedList')).toContainText('Albania');
-    await expect(page.locator('#sessionInfo')).toContainText('Required: L');
+    await expect(page.locator('#requiredLetterInfo')).toContainText('L');
     await expect(page.locator('#letterGrid .letter-cell.start-used')).toHaveCount(1);
     await expect(page.locator('#letterGrid .letter-cell.next-required')).toHaveCount(1);
-    await expect(page.locator('#gridLegend')).toBeVisible();
+    await expect(page.locator('#colourLegend')).toBeVisible();
   });
 
   test('rejects invalid country spelling', async ({ page }) => {
@@ -40,6 +40,6 @@ test.describe('Alfaquest gameplay', () => {
     await page.locator('#resetLocal').click();
     await page.locator('#alfa-toast').click();
     await expect(page.locator('#submittedList')).toHaveText('');
-    await expect(page.locator('#sessionInfo')).toContainText('Required: A');
+    await expect(page.locator('#requiredLetterInfo')).toContainText('A');
   });
 });

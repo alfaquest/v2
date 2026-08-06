@@ -9,7 +9,7 @@ test.describe('Alfafill Easy', () => {
     await expect(page.locator('#submittedList')).toContainText('Qatar');
     await expect(page.locator('#letterGrid .letter-cell.used')).toHaveCount(4);
     await expect(page.locator('#letterGrid .letter-cell.available')).toHaveCount(22);
-    await expect(page.locator('#gridLegend')).toBeVisible();
+    await expect(page.locator('#colourLegend')).toBeVisible();
   });
 });
 
@@ -20,7 +20,7 @@ test.describe('Alfafill Normal', () => {
     await page.locator('#submitCountry').click();
 
     await expect(page.locator('#submittedList')).toContainText('Albania');
-    await expect(page.locator('#sessionInfo')).toContainText('Required: L');
+    await expect(page.locator('#requiredLetterInfo')).toContainText('L');
   });
 });
 

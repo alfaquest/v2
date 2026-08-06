@@ -56,6 +56,35 @@
   text-decoration: none;
 }
 
+.required-letter-banner {
+  margin: 10px 0 0;
+}
+
+.required-letter-banner:empty {
+  display: none;
+}
+
+.required-letter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(254, 240, 138, 0.85);
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  color: #1a1202;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+}
+
+.required-letter-pill strong {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
 .grid-legend {
   margin: 10px 0 4px;
   padding: 8px 10px;
