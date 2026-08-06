@@ -11,6 +11,9 @@ test.describe('Alfaquest gameplay', () => {
 
     await expect(page.locator('#submittedList')).toContainText('Albania');
     await expect(page.locator('#sessionInfo')).toContainText('Required: L');
+    await expect(page.locator('#letterGrid .letter-cell.start-used')).toHaveCount(1);
+    await expect(page.locator('#letterGrid .letter-cell.next-required')).toHaveCount(1);
+    await expect(page.locator('#gridLegend')).toBeVisible();
   });
 
   test('rejects invalid country spelling', async ({ page }) => {

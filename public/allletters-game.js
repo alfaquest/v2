@@ -225,6 +225,25 @@ function renderSessionInfo(requiredLetter, statusText, pulseRequired){
   si.innerHTML = pills.join('');
 }
 
+function ensureGridLegend(){
+  if (typeof document === 'undefined') return;
+  const gridEl = document.getElementById('letterGrid');
+  if (!gridEl || !gridEl.parentNode) return;
+  if (document.getElementById('gridLegend')) return;
+
+  const legend = document.createElement('div');
+  legend.id = 'gridLegend';
+  legend.className = 'grid-legend';
+  legend.innerHTML =
+    '<div class="grid-legend-title">Grid colour key</div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch available"></span><span>Bright: still available</span></div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already collected or used</span></div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next starting letter</span></div>' +
+    '<div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>';
+
+  gridEl.insertAdjacentElement('afterend', legend);
+}
+
 function ensureSubmittedLegend(){
   if (typeof document === 'undefined') return;
   const listEl = document.getElementById('submittedList');
@@ -241,7 +260,7 @@ function ensureSubmittedLegend(){
   legend.style.fontSize = '0.82rem';
   legend.style.lineHeight = '1.5';
   legend.innerHTML =
-    '<div style="color:#cbe7ff;font-weight:800;margin-bottom:4px">Letter colour legend</div>' +
+    '<div style="color:#cbe7ff;font-weight:800;margin-bottom:4px">Answer list colour key</div>' +
     '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle"></span>Green: letter already used before that submission</div>' +
     '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fbbf24;margin-right:6px;vertical-align:middle"></span>Gold: current required letter highlight</div>' +
     '<div style="color:#d1d9e2"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle"></span>Red: ignored letter (W or X)</div>';
@@ -600,6 +619,7 @@ function scheduleGameOverReset(delayMs){
 
 function updateUI(){
   ensureSubmittedLegend();
+  ensureGridLegend();
   const usedArr = Array.from(usedLetters).sort();
   const isAlfa = isAlfaMode();
   const isEasyFill = isEasyAlfafillMode();
@@ -981,15 +1001,15 @@ function renderLetterGrid(){
       if (isIgnoredStart) classes.push('ignored-letter');
       else if (usedStarts.has(ch)) classes.push('start-used');
       else if (ch === required) classes.push('next-required');
-      else classes.push('unrevealed');
+      else classes.push('available');
     } else if (isNormal || isSeq || isSeqFull){
       if (isNormal && ch === required) classes.push('next-required');
       else if (usedLetters.has(ch)) classes.push('used');
       else if (ch === required) classes.push('next-required');
-      else classes.push('unrevealed');
+      else classes.push('available');
     } else {
       if (usedLetters.has(ch)) classes.push('used');
-      else classes.push('unrevealed');
+      else classes.push('available');
     }
     div.className = classes.join(' ');
     div.textContent = ch.toUpperCase();
@@ -1223,6 +1243,7 @@ function recomputeUsedStarts(){
 // Wire up UI
 window.addEventListener('load', ()=>{
   ensureSubmittedLegend();
+  ensureGridLegend();
   loadHighScore(); loadLocal(); updateUI();
   const input = document.getElementById('countryInput');
   const scoreToggle = document.getElementById('scoreToggle');

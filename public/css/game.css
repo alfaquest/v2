@@ -1,0 +1,120 @@
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.letter-cell {
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+
+/* Still needed — prominent */
+.letter-cell.available {
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(125, 211, 252, 0.55);
+  color: #e0f2fe;
+  font-weight: 800;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+}
+
+/* Already collected or used as starter — muted */
+.letter-cell.used,
+.letter-cell.start-used {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  color: #64748b;
+  opacity: 0.65;
+  text-decoration: line-through;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.letter-cell.ignored-letter {
+  opacity: 0.75;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  text-decoration: none;
+}
+
+.letter-cell.hidden {
+  display: none;
+}
+
+.letter-cell.next-required {
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  color: #1a1202;
+  font-weight: 900;
+  border: 2px solid #fef08a;
+  box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.3), 0 0 16px rgba(245, 158, 11, 0.55);
+  opacity: 1;
+  text-decoration: none;
+}
+
+.grid-legend {
+  margin: 10px 0 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background: rgba(15, 23, 39, 0.5);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #d1d9e2;
+}
+
+.grid-legend-title {
+  color: #cbe7ff;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.grid-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.grid-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.grid-legend-swatch.available {
+  background: rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(125, 211, 252, 0.7);
+}
+
+.grid-legend-swatch.collected {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(100, 116, 139, 0.5);
+}
+
+.grid-legend-swatch.required {
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  border: 1px solid #fef08a;
+}
+
+.grid-legend-swatch.ignored {
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+}
+
+@media (max-width: 800px) {
+  .letter-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .letter-cell {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+}

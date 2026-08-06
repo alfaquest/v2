@@ -8,6 +8,8 @@ test.describe('Alfafill Easy', () => {
 
     await expect(page.locator('#submittedList')).toContainText('Qatar');
     await expect(page.locator('#letterGrid .letter-cell.used')).toHaveCount(4);
+    await expect(page.locator('#letterGrid .letter-cell.available')).toHaveCount(22);
+    await expect(page.locator('#gridLegend')).toBeVisible();
   });
 });
 
