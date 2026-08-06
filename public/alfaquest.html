@@ -102,6 +102,15 @@
   <div class="game-row game-row--board">
     <div class="game-main">
       <div class="letter-grid" id="letterGrid"></div>
+      <div id="requiredLetterInfo" class="required-letter-banner"></div>
+      <div id="colourLegend" class="grid-legend">
+        <div class="grid-legend-title">Colour key</div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch available"></span><span>Bright: still available</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already used</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next letter</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>
+        <div class="grid-legend-row" style="margin-top:8px"><a href="helpv2.html" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">Sequencing tutorial &#8599;</a></div>
+      </div>
       <div class="progress"><i id="progressBar" style="width:0%"></i></div>
     </div>
     <div class="game-sidebar">
@@ -111,11 +120,11 @@
         <div id="bestScoreMeta" style="color:var(--muted);font-size:0.85rem;margin-top:2px">No saved high score yet</div>
       </div>
       <div id="scorePanel" class="score-panel" style="display:none">
-        <div id="alfaRatingHero" class="rating-hero" style="display:none">
+        <div id="alfaRatingHero" class="rating-hero">
           <span id="alfaRatingLabel" class="rating-hero-label">—</span>
           <span id="alfaRatingSub" class="rating-hero-sub">On-pace rating</span>
         </div>
-        <div id="ratingProgressRow" style="display:none;margin-bottom:10px">
+        <div id="ratingProgressRow" class="rating-progress-row">
           <div class="score-meta"><span id="ratingProgressLabel">Excellent in 1,200 pts</span></div>
           <div class="progress" style="height:6px;margin-top:4px"><i id="ratingProgressBar" style="width:0%"></i></div>
         </div>

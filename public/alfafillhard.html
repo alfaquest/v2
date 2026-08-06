@@ -71,6 +71,15 @@
   <div class="game-row game-row--board">
     <div class="game-main">
       <div class="letter-grid" id="letterGrid"></div>
+      <div id="requiredLetterInfo" class="required-letter-banner"></div>
+      <div id="colourLegend" class="grid-legend">
+        <div class="grid-legend-title">Colour key</div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch available"></span><span>Bright: still available</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch collected"></span><span>Dim / struck-through: already used</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch required"></span><span>Gold: required next letter</span></div>
+        <div class="grid-legend-row"><span class="grid-legend-swatch ignored"></span><span>Red: ignored (W or X in Alfaquest)</span></div>
+        <div class="grid-legend-row" style="margin-top:8px"><a href="helpv2.html" style="color:#7dd3fc;font-size:0.9rem;text-decoration:none">Sequencing tutorial &#8599;</a></div>
+      </div>
       <div class="progress"><i id="progressBar" style="width:0%"></i></div>
     </div>
     <div class="game-sidebar">

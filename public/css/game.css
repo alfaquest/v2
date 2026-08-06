@@ -58,6 +58,7 @@
 
 .required-letter-banner {
   margin: 10px 0 0;
+  min-height: 2.5rem;
 }
 
 .required-letter-banner:empty {
@@ -143,6 +144,12 @@
 .grid-legend-swatch.ignored {
   background: rgba(239, 68, 68, 0.25);
   border: 1px solid rgba(239, 68, 68, 0.55);
+}
+
+.rating-progress-row {
+  min-height: 2.75rem;
+  margin-bottom: 10px;
+  visibility: hidden;
 }
 
 .game-row {
