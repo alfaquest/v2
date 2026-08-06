@@ -771,6 +771,10 @@ function updateUI(){
     remainingCount = remainingLetters.length;
   }
   document.getElementById('remainingLetters').textContent = remainingCount;
+  const remainingCountLabelEl = document.getElementById('remainingCountLabel');
+  if (remainingCountLabelEl) {
+    remainingCountLabelEl.textContent = isAlfa ? 'Remaining starts:' : 'Remaining letters:';
+  }
   const scorePanelEl = document.getElementById('scorePanel');
   const totalScoreEl = document.getElementById('totalScore');
   const scoreRatingEl = document.getElementById('scoreRating');
