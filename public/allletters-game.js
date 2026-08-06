@@ -879,6 +879,10 @@ function updateUI(){
           gameOver = true;
           showResetRequiredToast(e.message, 'error');
         }
+        const submitBtn = document.getElementById('submitCountry');
+        const input = document.getElementById('countryInput');
+        if (submitBtn) submitBtn.disabled = true;
+        if (input) input.disabled = true;
       }
     }
   } else {
