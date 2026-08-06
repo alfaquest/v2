@@ -137,6 +137,27 @@
   border: 1px solid rgba(239, 68, 68, 0.55);
 }
 
+.game-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.game-row--board {
+  align-items: flex-start;
+}
+
+.game-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
 @media (max-width: 800px) {
   .letter-grid {
     grid-template-columns: repeat(7, 1fr);
@@ -145,5 +166,15 @@
   .letter-cell {
     padding: 8px;
     font-size: 0.85rem;
+  }
+
+  .game-row--board {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-sidebar {
+    width: 100%;
+    max-width: none;
   }
 }

@@ -26,5 +26,21 @@ for (const { path, heading } of gamePages) {
       await page.goto(path);
       await expect(page.locator('script[src="allletters-game.js"]')).toHaveCount(1);
     });
+
+    test('mobile layout avoids horizontal overflow', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(path);
+
+      const hasOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+      );
+      expect(hasOverflow).toBe(false);
+
+      const sidebar = page.locator('.game-sidebar');
+      await expect(sidebar).toBeVisible();
+      const sidebarWidth = await sidebar.evaluate((el) => el.getBoundingClientRect().width);
+      const viewportWidth = page.viewportSize()?.width ?? 390;
+      expect(sidebarWidth).toBeGreaterThan(viewportWidth * 0.85);
+    });
   });
 }

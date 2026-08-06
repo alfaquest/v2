@@ -25,7 +25,6 @@
     button{background:var(--accent);color:#021023;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
     button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
     #output{width:100%;height:260px;font-family:Menlo,monospace;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));border-radius:8px;padding:12px;overflow:auto;color:#cbe7ff}
-    .game-row{display:flex;gap:12px;align-items:center;margin-top:16px}
     .meta{display:flex;gap:12px;align-items:center}
     .hl{color:var(--accent);font-weight:700}
     .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;margin-top:8px}
@@ -41,7 +40,7 @@
       .container{max-width:100%;padding:0}
       .controls{flex-direction:column;align-items:stretch}
       .game-row{flex-direction:column;align-items:stretch}
-      input#countryInput{width:100%;max-width:260px;font-size:16px !important;line-height:16px;height:34px !important;min-height:34px;max-height:34px;padding:4px 8px;box-sizing:border-box;appearance:none;-webkit-appearance:none;margin-bottom:8px}
+      input#countryInput{width:100%;max-width:100%;flex:1 1 100%;font-size:16px !important;line-height:16px;height:34px !important;min-height:34px;max-height:34px;padding:4px 8px;box-sizing:border-box;appearance:none;-webkit-appearance:none;margin-bottom:8px}
       #countryInput::placeholder{font-size:16px}
       button{width:100%}
       .progress{height:8px}
@@ -66,12 +65,12 @@
     <button id="submitCountry">Submit</button>
     <button id="resetLocal" class="ghost">Reset</button>
   </div>
-  <div class="game-row">
-    <div style="flex:1">
+  <div class="game-row game-row--board">
+    <div class="game-main">
       <div class="letter-grid" id="letterGrid"></div>
       <div class="progress"><i id="progressBar" style="width:0%"></i></div>
     </div>
-    <div style="width:320px">
+    <div class="game-sidebar">
       <div><strong>Remaining letters:</strong> <span id="remainingLetters">26</span></div>
       <div id="scorePanel" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.03)">
         <div><strong>Current score rating:</strong> <span id="scoreRating">Legendary</span></div>
