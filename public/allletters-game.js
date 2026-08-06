@@ -225,7 +225,7 @@ function ensureRequiredLetterBanner(){
   gridEl.insertAdjacentElement('afterend', banner);
 }
 
-function renderSessionInfo(requiredLetter, statusText, pulseRequired){
+function renderSessionInfo(requiredLetter, statusText, pulseRequired, requiredExplanation){
   if (typeof document === 'undefined') return;
   ensureSessionInfoBadgeStyles();
   ensureRequiredLetterBanner();
@@ -240,9 +240,14 @@ function renderSessionInfo(requiredLetter, statusText, pulseRequired){
   if (requiredEl) {
     if (hasRequired) {
       const pulseClass = pulseRequired ? ' required-pill-pulse' : '';
+      let hintHtml = '';
+      if (requiredExplanation) {
+        hintHtml = '<div class="required-letter-hint">' + escapeHtml(requiredExplanation) + '</div>';
+      }
       requiredEl.innerHTML =
         '<span class="required-letter-pill' + pulseClass + '">Next country must start with <strong>' +
-        escapeHtml(String(requiredLetter).toUpperCase()) + '</strong></span>';
+        escapeHtml(String(requiredLetter).toUpperCase()) + '</strong></span>' +
+        hintHtml;
     } else if (clearAll) {
       requiredEl.innerHTML = '';
     }
@@ -1007,7 +1012,12 @@ function updateUI(){
       const req = (isAlfa || isNormal) ? getRequiredStart(submitted) : getNextSequentialRequiredLetter();
       const requiredLabel = req ? req.toUpperCase() : '?';
       const shouldPulse = requiredLabel !== lastRenderedRequiredLetter;
-      renderSessionInfo(requiredLabel, null, shouldPulse);
+      let requiredExplanation = null;
+      if (isAlfa || isNormal) {
+        const context = getRequiredLetterContext(submitted);
+        if (context && context.explanation) requiredExplanation = context.explanation;
+      }
+      renderSessionInfo(requiredLabel, null, shouldPulse, requiredExplanation);
       lastRenderedRequiredLetter = requiredLabel;
       // check for available countries matching required rule
       const available = (isAlfa || isNormal)
@@ -1297,6 +1307,50 @@ function getRequiredStart(submittedList){
 
   if (submittedList.length === 0) return 'a';
   return prevCommon;
+}
+
+function getRequiredLetterContext(submittedList){
+  if (!submittedList || submittedList.length === 0) {
+    return {
+      required: 'a',
+      explanation: 'Every Alfaquest run begins with a country starting with A.'
+    };
+  }
+
+  const alpha = GAME_ALPH.slice();
+  const usedStarts = IGNORED.slice();
+  let prevCommon = null;
+  let sourceWordNormalized = '';
+
+  for (let i = 0; i < submittedList.length; i++){
+    const w = normalize(submittedList[i]);
+    if (!w) return null;
+    const start = w.charAt(0);
+    if (usedStarts.indexOf(start) !== -1) return null;
+    usedStarts.push(start);
+    for (let k = alpha.length - 1; k >= 0; k--) {
+      if (alpha[k] === start) alpha.splice(k, 1);
+    }
+    let common = '';
+    for (let j = 0; j < w.length; j++){
+      const ch = w.charAt(j);
+      if (alpha.indexOf(ch) !== -1) {
+        common = ch;
+        break;
+      }
+    }
+    if (common === '') return null;
+    prevCommon = common;
+    sourceWordNormalized = w;
+  }
+
+  if (!prevCommon || !sourceWordNormalized) return null;
+  const displayName = formatDisplayCountry(sourceWordNormalized);
+  return {
+    required: prevCommon,
+    explanation: 'From ' + displayName + ', ' + prevCommon.toUpperCase() +
+      ' is the first unused starting letter in that word.'
+  };
 }
 
 function renderLetterGrid(){

@@ -45,9 +45,16 @@ test.describe('Alfaquest gameplay', () => {
 
     await expect(page.locator('#submittedList')).toContainText('Albania');
     await expect(page.locator('#requiredLetterInfo')).toContainText('L');
+    await expect(page.locator('#requiredLetterInfo .required-letter-hint')).toContainText(/Albania/i);
+    await expect(page.locator('#requiredLetterInfo .required-letter-hint')).toContainText(/first unused starting letter/i);
     await expect(page.locator('#letterGrid .letter-cell.start-used')).toHaveCount(1);
     await expect(page.locator('#letterGrid .letter-cell.next-required')).toHaveCount(1);
     await expect(page.locator('#colourLegend')).toBeVisible();
+  });
+
+  test('first-turn required letter explains the A rule', async ({ page }) => {
+    await expect(page.locator('#requiredLetterInfo')).toContainText('A');
+    await expect(page.locator('#requiredLetterInfo .required-letter-hint')).toContainText(/begin.*A/i);
   });
 
   test('scoring modal documents letter-weighted position bonus', async ({ page }) => {
