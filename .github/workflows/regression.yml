@@ -44,11 +44,19 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      # Single job avoids a second runner acquisition on the one free slot.
-      # Required repo secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
-      # Manual deploy fallback: npm run deploy
-      - name: Deploy to Cloudflare Pages (production)
+      - name: Check Cloudflare deploy secrets
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: deploy_ready
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Deploy skipped::Cloudflare secrets are not set. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in GitHub → Settings → Secrets and variables → Actions, or run the Deploy production workflow / npm run deploy locally."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Cloudflare Pages (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.deploy_ready.outputs.ready == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
