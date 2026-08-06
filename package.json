@@ -8,7 +8,9 @@
     "test": "playwright test",
     "test:regression": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "deploy": "wrangler pages deploy public --project-name=alfaquest-pages",
+    "deploy:pages": "wrangler pages deploy public --project-name=alfaquest-pages"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
