@@ -75,8 +75,16 @@ function normalize(s){ return String(s||'').trim().toLowerCase(); }
 const API_BASE = (typeof window !== 'undefined' && typeof window.ALFA_API_BASE === 'string')
   ? window.ALFA_API_BASE.replace(/\/+$/, '')
   : '';
-const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v3';
-const ALFA_SCORING_VERSION = 'v3_million_scale';
+const ALFA_HIGH_SCORE_KEY = 'alfaquest_high_score_v4';
+const ALFA_SCORING_VERSION = 'v4_honest_scale';
+const ALFA_RATING_TIERS = Object.freeze([
+  { min: 46000, label: 'Legendary' },
+  { min: 44000, label: 'Excellent' },
+  { min: 42000, label: 'Very good' },
+  { min: 40000, label: 'Good' },
+  { min: 38000, label: 'Fair' },
+  { min: 0, label: 'Completed' }
+]);
 const ALFA_TIME_TARGET_PER_MOVE_SECONDS = 12;
 const ALFA_TIME_TARGET_MIN_SECONDS = 120;
 const ALFA_TIME_FACTOR_MIN = 0.90;
@@ -89,7 +97,6 @@ const ALFA_SPEED_BONUS_SCALE = 12;
 const ALFA_SPEED_BONUS_PER_COUNTRY_CAP = 15;
 const ALFA_SPEED_BONUS_TOTAL_CAP = 180;
 const ALFA_TIMING_SPEED_SCORE_FACTOR = 100;
-const ALFA_FINAL_SCORE_SCALE = 22;
 
 function apiUrl(path){
   const p = path.startsWith('/') ? path : ('/' + path);
@@ -113,6 +120,7 @@ let runEndedAtMs = null;
 let lastRenderedRequiredLetter = null;
 let liveScoreTimerId = null;
 let speedBonuses = [];
+let finalScoreDeltas = [];
 let currentEntryStartedAtMs = null;
 
 function isAlfaScoringMode(){
@@ -317,10 +325,101 @@ function getScoreBreakdown(){
     timingScore,
     speedBonus,
     unscaledFinalScore,
-    finalScore: Math.round(unscaledFinalScore * ALFA_FINAL_SCORE_SCALE),
+    finalScore: unscaledFinalScore,
     elapsedSeconds,
     targetSeconds,
     timeFactor
+  };
+}
+
+function getScoreBreakdownForPrefix(moveCount){
+  const rawScore = submissionScores.slice(0, moveCount).reduce((sum, value) => sum + value, 0);
+  if (!isAlfaScoringMode() || moveCount <= 0 || rawScore <= 0) {
+    return {
+      rawScore: 0,
+      finalScore: 0,
+      speedBonus: 0,
+      timeFactor: 1
+    };
+  }
+
+  const elapsedSeconds = getElapsedSeconds();
+  const targetSeconds = getTargetSeconds(moveCount);
+  const timeFactor = getTimeFactor(elapsedSeconds, targetSeconds);
+  const timeAdjustedScore = Math.round(rawScore * timeFactor);
+  const speedBonus = clampNumber(
+    speedBonuses.slice(0, moveCount).reduce((sum, value) => sum + value, 0),
+    -ALFA_SPEED_BONUS_TOTAL_CAP,
+    ALFA_SPEED_BONUS_TOTAL_CAP
+  );
+  const timingScore = timeAdjustedScore + (speedBonus * ALFA_TIMING_SPEED_SCORE_FACTOR);
+  const unscaledFinalScore = Math.round((rawScore * ALFA_WEIGHT_LETTERS) + (timingScore * ALFA_WEIGHT_TIMING));
+  return {
+    rawScore,
+    speedBonus,
+    timeFactor,
+    finalScore: unscaledFinalScore
+  };
+}
+
+function recomputeFinalScoreDeltas(){
+  finalScoreDeltas = [];
+  if (!isAlfaScoringMode() || submissionScores.length === 0) return;
+  let previousFinal = 0;
+  for (let i = 0; i < submissionScores.length; i++) {
+    const breakdown = getScoreBreakdownForPrefix(i + 1);
+    finalScoreDeltas.push(breakdown.finalScore - previousFinal);
+    previousFinal = breakdown.finalScore;
+  }
+}
+
+function getSpeedBonusScorePoints(speedBonusTotal){
+  return Math.round(speedBonusTotal * ALFA_TIMING_SPEED_SCORE_FACTOR * ALFA_WEIGHT_TIMING);
+}
+
+function formatScoreDelta(value){
+  if (!Number.isFinite(value) || value === 0) return '+0';
+  return (value > 0 ? '+' : '') + value.toLocaleString();
+}
+
+function getAlfaScoreRating(finalScore){
+  for (const tier of ALFA_RATING_TIERS) {
+    if (finalScore >= tier.min) return tier.label;
+  }
+  return 'Completed';
+}
+
+function getAlfaRatingProgress(finalScore){
+  for (let i = 0; i < ALFA_RATING_TIERS.length; i++) {
+    const tier = ALFA_RATING_TIERS[i];
+    if (finalScore >= tier.min) {
+      const nextTier = i > 0 ? ALFA_RATING_TIERS[i - 1] : null;
+      if (!nextTier) {
+        return {
+          projectedRating: tier.label,
+          nextRating: null,
+          pointsNeeded: 0,
+          progressPct: 100
+        };
+      }
+      const pointsNeeded = Math.max(0, nextTier.min - finalScore);
+      const range = nextTier.min - tier.min;
+      const progressPct = range > 0
+        ? Math.min(100, Math.max(0, Math.round(((finalScore - tier.min) / range) * 100)))
+        : 0;
+      return {
+        projectedRating: tier.label,
+        nextRating: nextTier.label,
+        pointsNeeded,
+        progressPct
+      };
+    }
+  }
+  return {
+    projectedRating: 'Completed',
+    nextRating: 'Fair',
+    pointsNeeded: ALFA_RATING_TIERS[ALFA_RATING_TIERS.length - 2].min,
+    progressPct: 0
   };
 }
 
@@ -329,29 +428,59 @@ function renderAlfaScorePanelMetrics(){
   const totalScoreEl = document.getElementById('totalScore');
   const rawScoreEl = document.getElementById('rawScore');
   const speedBonusEl = document.getElementById('speedBonus');
-  const lastScoreEl = document.getElementById('lastScore');
-  const lastSpeedBonusEl = document.getElementById('lastSpeedBonus');
+  const lastScoreDeltaEl = document.getElementById('lastScoreDelta');
   const elapsedTimeEl = document.getElementById('elapsedTime');
   const timeFactorEl = document.getElementById('timeFactor');
-  const alfaScoreRatingRowEl = document.getElementById('alfaScoreRatingRow');
-  const alfaScoreRatingEl = document.getElementById('alfaScoreRating');
-  if (!totalScoreEl || !lastScoreEl) return;
+  const alfaRatingHeroEl = document.getElementById('alfaRatingHero');
+  const alfaRatingLabelEl = document.getElementById('alfaRatingLabel');
+  const alfaRatingSubEl = document.getElementById('alfaRatingSub');
+  const ratingProgressRowEl = document.getElementById('ratingProgressRow');
+  const ratingProgressLabelEl = document.getElementById('ratingProgressLabel');
+  const ratingProgressBarEl = document.getElementById('ratingProgressBar');
+  if (!totalScoreEl) return;
 
   const breakdown = getScoreBreakdown();
-  totalScoreEl.textContent = String(breakdown.finalScore);
-  if (rawScoreEl) rawScoreEl.textContent = String(breakdown.rawScore);
-  if (speedBonusEl) speedBonusEl.textContent = String(breakdown.speedBonus);
-  lastScoreEl.textContent = String(submissionScores.length ? submissionScores[submissionScores.length - 1] : 0);
-  if (lastSpeedBonusEl) lastSpeedBonusEl.textContent = String(speedBonuses.length ? speedBonuses[speedBonuses.length - 1] : 0);
+  const completed = isCompletedAlfaRun();
+  const progress = getAlfaRatingProgress(breakdown.finalScore);
+  const speedScorePoints = getSpeedBonusScorePoints(breakdown.speedBonus);
+  const lastDelta = finalScoreDeltas.length ? finalScoreDeltas[finalScoreDeltas.length - 1] : 0;
+
+  totalScoreEl.textContent = breakdown.finalScore.toLocaleString();
+  if (rawScoreEl) rawScoreEl.textContent = breakdown.rawScore.toLocaleString();
+  if (speedBonusEl) {
+    speedBonusEl.textContent = breakdown.speedBonus === 0
+      ? '0'
+      : breakdown.speedBonus + ' → ' + formatScoreDelta(speedScorePoints) + ' pts';
+  }
+  if (lastScoreDeltaEl) lastScoreDeltaEl.textContent = formatScoreDelta(lastDelta);
   if (elapsedTimeEl) elapsedTimeEl.textContent = formatElapsedSeconds(breakdown.elapsedSeconds);
   if (timeFactorEl) timeFactorEl.textContent = 'x' + breakdown.timeFactor.toFixed(2);
-  if (alfaScoreRatingRowEl && alfaScoreRatingEl) {
-    if (isCompletedAlfaRun()) {
-      alfaScoreRatingRowEl.style.display = 'block';
-      alfaScoreRatingEl.textContent = getAlfaScoreRating(breakdown.finalScore);
+
+  if (alfaRatingLabelEl) {
+    alfaRatingLabelEl.textContent = completed
+      ? getAlfaScoreRating(breakdown.finalScore)
+      : progress.projectedRating;
+  }
+  if (alfaRatingSubEl) {
+    alfaRatingSubEl.textContent = completed ? 'Final rating' : 'On-pace rating';
+  }
+  if (alfaRatingHeroEl) {
+    alfaRatingHeroEl.style.display = submitted.length > 0 ? 'block' : 'none';
+  }
+
+  if (ratingProgressRowEl && ratingProgressLabelEl && ratingProgressBarEl) {
+    if (submitted.length > 0 && progress.nextRating && progress.pointsNeeded > 0) {
+      ratingProgressRowEl.style.display = 'block';
+      ratingProgressLabelEl.textContent = progress.nextRating + ' in ' + progress.pointsNeeded.toLocaleString() + ' pts';
+      ratingProgressBarEl.style.width = progress.progressPct + '%';
+    } else if (submitted.length > 0 && !progress.nextRating) {
+      ratingProgressRowEl.style.display = 'block';
+      ratingProgressLabelEl.textContent = 'Top rating reached';
+      ratingProgressBarEl.style.width = '100%';
     } else {
-      alfaScoreRatingRowEl.style.display = 'none';
-      alfaScoreRatingEl.textContent = '';
+      ratingProgressRowEl.style.display = 'none';
+      ratingProgressLabelEl.textContent = '';
+      ratingProgressBarEl.style.width = '0%';
     }
   }
 }
@@ -420,15 +549,16 @@ function renderHighScore(){
   rowEl.style.display = isAlfaMode() ? 'block' : 'none';
   if (!isAlfaMode()) return;
   if (highScoreRecord) {
-    scoreEl.textContent = String(highScoreRecord.score);
+    scoreEl.textContent = highScoreRecord.score.toLocaleString();
+    const rating = getAlfaScoreRating(highScoreRecord.score);
     if (highScoreRecord.moves > 0) {
       const answersLabel = highScoreRecord.moves + (highScoreRecord.moves === 1 ? ' answer' : ' answers');
       const durationLabel = highScoreRecord.elapsedSeconds > 0
         ? ' in ' + formatElapsedSeconds(highScoreRecord.elapsedSeconds)
         : '';
-      metaEl.textContent = 'Best run: ' + answersLabel + durationLabel;
+      metaEl.textContent = rating + ' — ' + answersLabel + durationLabel;
     } else {
-      metaEl.textContent = '';
+      metaEl.textContent = rating;
     }
   } else {
     scoreEl.textContent = '0';
@@ -580,20 +710,14 @@ function isCompletedAlfaRun(){
   return GAME_ALPH.every(ch => usedStarts.has(ch));
 }
 
-function getAlfaScoreRating(finalScore){
-  if (finalScore >= 1000000) return 'Legendary';
-  if (finalScore >= 960000) return 'Excellent';
-  if (finalScore >= 920000) return 'Very good';
-  if (finalScore >= 880000) return 'Good';
-  if (finalScore >= 840000) return 'Fair';
-  return 'Completed';
-}
-
 function getCompletionToastMessage(){
   if (isAlfaMode()){
     const breakdown = getScoreBreakdown();
     const rating = getAlfaScoreRating(breakdown.finalScore);
-    return 'Bravo! All 24 required starting letters completed. Score: ' + breakdown.finalScore + '. Rating: ' + rating + '.';
+    const timeLabel = breakdown.elapsedSeconds > 0
+      ? ' in ' + formatElapsedSeconds(breakdown.elapsedSeconds)
+      : '';
+    return 'Bravo! ' + rating + ' run — ' + breakdown.finalScore.toLocaleString() + ' points' + timeLabel + '.';
   }
   if (isEasyAlfafillMode()){
     const moveCount = submitted.length;
@@ -643,14 +767,10 @@ function updateUI(){
   document.getElementById('remainingLetters').textContent = remainingCount;
   const scorePanelEl = document.getElementById('scorePanel');
   const totalScoreEl = document.getElementById('totalScore');
-  const rawScoreEl = document.getElementById('rawScore');
-  const lastScoreEl = document.getElementById('lastScore');
-  const elapsedTimeEl = document.getElementById('elapsedTime');
-  const timeFactorEl = document.getElementById('timeFactor');
   const scoreRatingEl = document.getElementById('scoreRating');
   const scoreMovesEl = document.getElementById('scoreMoves');
   renderHighScore();
-  if (isAlfa && scorePanelEl && totalScoreEl && lastScoreEl){
+  if (isAlfa && scorePanelEl && totalScoreEl){
     scorePanelEl.style.display = scoreDisplayEnabled ? 'block' : 'none';
     renderAlfaScorePanelMetrics();
     syncLiveScoreTimer();
@@ -686,10 +806,8 @@ function updateUI(){
     const li = document.createElement('li');
     let scoreSuffix = '';
     if (isAlfa && scoreDisplayEnabled) {
-      const total = submissionScores[i] || 0;
-      const positionBonus = (i + 1) * 100;
-      const firstLetterScore = total - positionBonus;
-      scoreSuffix = ' <span class="score-meta">(+' + total + ': ' + firstLetterScore + ' starting letter + ' + positionBonus + ' position bonus)</span>';
+      const delta = finalScoreDeltas[i] || 0;
+      scoreSuffix = ' <span class="score-meta">(' + formatScoreDelta(delta) + ' pts)</span>';
     }
     li.innerHTML = (i+1)+'. '+formatDisplayWithHighlights(c, alreadyUsed, c.charAt(0), activeLetter) + scoreSuffix;
     ul.appendChild(li);
@@ -1108,8 +1226,11 @@ function addCountryLocal(name){
     syncLiveScoreTimer();
   }
   if (isAlfaScoringMode()) {
+    const beforeFinal = getScoreBreakdown().finalScore;
     submissionScores.push(scoreWord(n, submitted.length));
     speedBonuses.push(computeSpeedBonus(n, consumeEntryElapsedMs()));
+    const afterFinal = getScoreBreakdown().finalScore;
+    finalScoreDeltas.push(afterFinal - beforeFinal);
   }
   if (!isSeq && !isSeqFull) usedStarts.add(n.charAt(0));
   if (isSeq){
@@ -1140,6 +1261,7 @@ function loadLocal(){
       usedLetters = new Set();
       submissionScores = [];
       speedBonuses = [];
+      finalScoreDeltas = [];
       currentEntryStartedAtMs = null;
       runStartedAtMs = null;
       runEndedAtMs = null;
@@ -1156,7 +1278,7 @@ function loadLocal(){
     runStartedAtMs = null;
     runEndedAtMs = null;
     recomputeUsedStarts();
-  }catch(e){ submitted = []; usedLetters = new Set(); submissionScores = []; speedBonuses = []; currentEntryStartedAtMs = null; runStartedAtMs = null; runEndedAtMs = null; }
+  }catch(e){ submitted = []; usedLetters = new Set(); submissionScores = []; speedBonuses = []; finalScoreDeltas = []; currentEntryStartedAtMs = null; runStartedAtMs = null; runEndedAtMs = null; }
 }
 
 // Server session helpers (optional)
@@ -1191,9 +1313,11 @@ async function loadSessionStatus(){
     if (isAlfaScoringMode()) {
       submissionScores = submitted.map((entry, i) => scoreWord(entry, i + 1));
       speedBonuses = submitted.map(() => 0);
+      recomputeFinalScoreDeltas();
     } else {
       submissionScores = [];
       speedBonuses = [];
+      finalScoreDeltas = [];
     }
     recomputeUsedStarts();
     updateUI();
@@ -1205,6 +1329,7 @@ function resetLocal(){
   usedLetters = new Set();
   submissionScores = [];
   speedBonuses = [];
+  finalScoreDeltas = [];
   currentEntryStartedAtMs = null;
   runStartedAtMs = null;
   runEndedAtMs = null;
