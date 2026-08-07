@@ -17,6 +17,40 @@ test.describe('Alfafill Easy', () => {
     await expect(page.locator('#letterGrid .letter-cell.available')).toHaveCount(22);
     await expect(page.locator('#colourLegend')).toBeVisible();
   });
+
+  test('shows victory summary when alphabet is complete', async ({ page }) => {
+    test.setTimeout(120_000);
+    await openAlfafillPage(page, '/alfafilleasy.html');
+    const winningSequence = [
+      'Afghanistan',
+      'Albania',
+      'Algeria',
+      'Andorra',
+      'Antigua and Barbuda',
+      'Armenia',
+      'Azerbaijan',
+      'Bolivia',
+      'Botswana',
+      'Burkina Faso',
+      'Cambodia',
+      'Cape Verde',
+      'Cyprus',
+      'Equatorial Guinea',
+      'Luxembourg',
+    ];
+    for (const country of winningSequence) {
+      await page.locator('#countryInput').fill(country);
+      await page.locator('#submitCountry').click();
+    }
+
+    await expect(page.locator('#remainingLetters')).toHaveText('0');
+    await expect(page.locator('#completionSummary')).toBeVisible();
+    await expect(page.locator('#completionSummary')).toContainText(/Victory — alphabet complete/i);
+    await expect(page.locator('#completionSummary')).toContainText(/Legendary|Excellent|Very good|Good|Fair|Keep Trying/i);
+    await expect(page.locator('#alfa-toast')).toContainText(/Bravo!/i);
+    await expect(page.locator('#submitCountry')).toBeDisabled();
+    await expect(page.locator('#resetLocal')).toHaveClass(/reset-required/);
+  });
 });
 
 test.describe('Alfafill Normal', () => {

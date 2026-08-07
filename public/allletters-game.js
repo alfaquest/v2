@@ -510,6 +510,70 @@ function renderCompletionSummary(beatHighScore){
   if (copyBtn) copyBtn.addEventListener('click', copyShareableResult);
 }
 
+function renderFillCompletionSummary(){
+  if (typeof document === 'undefined') return;
+  const isEasyFill = isEasyAlfafillMode();
+  const isNormal = isNormalAlfafillMode();
+  const isStrict = isSequentialFullCollectMode();
+  if (!isEasyFill && !isNormal && !isStrict) return;
+
+  ensureCompletionSummary();
+  const el = document.getElementById('completionSummary');
+  if (!el) return;
+
+  const moveCount = submitted.length;
+  let rating;
+  let modeLabel;
+  let nextModeHtml = '';
+  if (isEasyFill) {
+    rating = getEasyModeRating(moveCount);
+    modeLabel = 'Alfaquest Easy';
+    nextModeHtml =
+      '<div class="completion-next-mode">Ready for sequencing? Try ' +
+      '<a href="alfafillnormal.html">Alfaquest Fill</a>.</div>';
+  } else if (isNormal) {
+    rating = getNormalModeRating(moveCount);
+    modeLabel = 'Alfaquest Fill';
+    nextModeHtml =
+      '<div class="completion-next-mode">Try ' +
+      '<a href="alfaquest.html">Alfaquest Classic</a> for the pure sequencing challenge.</div>';
+  } else {
+    rating = getHardModeRating(moveCount);
+    modeLabel = 'Alfaquest Strict';
+  }
+
+  el.innerHTML =
+    '<div class="completion-title">Victory — alphabet complete!</div>' +
+    '<div class="completion-rating">' + escapeHtml(rating) + '</div>' +
+    '<div class="completion-stats">' +
+    '<span><strong>Mode:</strong> ' + escapeHtml(modeLabel) + '</span>' +
+    '<span><strong>Countries:</strong> ' + moveCount + '</span>' +
+    '</div>' +
+    nextModeHtml +
+    '<div class="completion-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to play again.</div>';
+  el.style.display = 'block';
+  const resetLink = el.querySelector('.game-over-reset-link');
+  if (resetLink) resetLink.addEventListener('click', () => requestReset());
+}
+
+function handleRunComplete(){
+  if (completionShown) return;
+  completionShown = true;
+  hideGameOverSummary();
+  lockRunEndTime();
+  const beatHighScore = isAlfaMode() ? maybeUpdateHighScore() : false;
+  if (isAlfaMode()) renderCompletionSummary(beatHighScore);
+  else if (isEasyAlfafillMode() || isNormalAlfafillMode() || isSequentialFullCollectMode()) {
+    renderFillCompletionSummary();
+  }
+  highlightResetRequired();
+  const submitBtn = document.getElementById('submitCountry');
+  const input = document.getElementById('countryInput');
+  if (submitBtn) submitBtn.disabled = true;
+  if (input) input.disabled = true;
+  showResetRequiredToast(getCompletionToastMessage(), 'success');
+}
+
 function maybeShowStartMilestones(pct, completedStarts){
   const thresholds = [25, 50, 75];
   for (const threshold of thresholds) {
@@ -1234,23 +1298,19 @@ function updateUI(){
         if (input) input.disabled = true;
       } else {
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
-        gameOver = false;
-        clearResetHighlight();
-        if (submitBtn) submitBtn.disabled = false;
-        if (input) input.disabled = false;
+        if (remainingLetters.length > 0) {
+          gameOver = false;
+          clearResetHighlight();
+          if (submitBtn) submitBtn.disabled = false;
+          if (input) input.disabled = false;
+        }
       }
     } else {
       if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
     }
   }
   if ((isAlfa && remainingCount === 0) || (isSeq && isSequenceModeComplete()) || (isSeqFull && remainingLetters.length === 0) || (!isAlfa && !isSeq && !isSeqFull && remainingLetters.length === 0)) {
-    if (!completionShown){
-      completionShown = true;
-      hideGameOverSummary();
-      const beatHighScore = isAlfa ? maybeUpdateHighScore() : false;
-      if (isAlfa) renderCompletionSummary(beatHighScore);
-      showResetRequiredToast(getCompletionToastMessage(), 'success');
-    }
+    handleRunComplete();
   }
 }
 

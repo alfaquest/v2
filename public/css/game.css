@@ -336,6 +336,24 @@ button {
   margin-bottom: 8px;
 }
 
+.completion-next-mode,
+.completion-hint {
+  margin-top: 8px;
+  color: #9aa6b2;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.completion-next-mode a,
+.completion-hint a {
+  color: #7dd3fc;
+  font-weight: 700;
+}
+
+.completion-summary .game-over-reset-link {
+  color: #86efac;
+}
+
 .completion-high-score {
   font-size: 0.88rem;
   color: #86efac;
