@@ -56,6 +56,16 @@
   text-decoration: none;
 }
 
+.letter-cell.required-start-collected {
+  background: rgba(15, 23, 42, 0.72);
+  color: #fde047;
+  font-weight: 900;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+  opacity: 1;
+  text-decoration: none;
+}
+
 .required-letter-banner {
   margin: 10px 0 0;
   min-height: 2.5rem;
