@@ -201,6 +201,18 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#remainingLetters')).toHaveText('19');
   });
 
+  test('on-pace rating projects finish and avoids misleading Completed label', async ({ page }) => {
+    await submitCountries(page, WINNING_SEQUENCE.slice(0, 5));
+    await expect(page.locator('#alfaRatingLabel')).toHaveText('Below Fair');
+
+    await submitCountries(page, WINNING_SEQUENCE.slice(5, 16));
+    await expect(page.locator('#alfaRatingLabel')).toHaveText('Below Fair');
+    await expect(page.locator('#ratingProgressLabel')).toContainText(/Fair in/i);
+
+    await submitCountries(page, WINNING_SEQUENCE.slice(16, 21));
+    await expect(page.locator('#alfaRatingLabel')).toHaveText(/Legendary|Excellent|Very good|Good|Fair/);
+  });
+
   test('completes all 24 starting letters with a known winning sequence', async ({ page }) => {
     test.setTimeout(120_000);
     await submitCountries(page, WINNING_SEQUENCE);
