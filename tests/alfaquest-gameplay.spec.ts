@@ -135,6 +135,16 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#submitCountry')).toBeEnabled();
   });
 
+  test('game over summary Reset link clears the game', async ({ page }) => {
+    await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
+    await expect(page.locator('#gameOverSummary .game-over-reset-link')).toBeVisible();
+
+    await page.locator('#gameOverSummary .game-over-reset-link').click();
+    await expect(page.locator('#submittedList')).toHaveText('');
+    await expect(page.locator('#gameOverSummary')).toBeHidden();
+    await expect(page.locator('#submitCountry')).toBeEnabled();
+  });
+
   test('run clock stops on game over', async ({ page }) => {
     await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
     await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);

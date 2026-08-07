@@ -428,8 +428,10 @@ function renderGameOverSummary(summary){
     '<div class="game-over-title">Game over — needed <strong>' + escapeHtml(letter) + '</strong></div>' +
     '<div class="game-over-reason">' + escapeHtml(summary.reason) + '</div>' +
     examplesHtml +
-    '<div class="game-over-hint">Tap Reset to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
+    '<div class="game-over-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
   el.style.display = 'block';
+  const resetLink = el.querySelector('.game-over-reset-link');
+  if (resetLink) resetLink.addEventListener('click', () => requestReset());
 }
 
 function ensureCompletionSummary(){
@@ -1690,6 +1692,25 @@ async function loadSessionStatus(){
   }catch(e){ showErrorToast('Error loading session: '+e.message); }
 }
 
+function requestReset(){
+  if (gameOver) {
+    resetLocal();
+    return;
+  }
+  showToast('Reset game? Tap here to confirm.', 'info', 0, () => resetLocal());
+  const dismissOnOutsideClick = (e) => {
+    const toast = document.getElementById('alfa-toast');
+    if (!toast){
+      document.removeEventListener('click', dismissOnOutsideClick, true);
+      return;
+    }
+    if (toast.contains(e.target)) return;
+    toast.remove();
+    document.removeEventListener('click', dismissOnOutsideClick, true);
+  };
+  setTimeout(() => document.addEventListener('click', dismissOnOutsideClick, true), 0);
+}
+
 function resetLocal(){
   submitted = [];
   usedLetters = new Set();
@@ -1767,25 +1788,7 @@ window.addEventListener('load', ()=>{
     if (currentEntryStartedAtMs === null) currentEntryStartedAtMs = Date.now();
   });
   const resetBtn = document.getElementById('resetLocal');
-  if (resetBtn) resetBtn.addEventListener('click', ()=>{
-    if (gameOver) {
-      resetLocal();
-      return;
-    }
-    showToast('Reset game? Tap here to confirm.', 'info', 0, () => resetLocal());
-    const dismissOnOutsideClick = (e) => {
-      const toast = document.getElementById('alfa-toast');
-      if (!toast){
-        document.removeEventListener('click', dismissOnOutsideClick, true);
-        return;
-      }
-      if (toast.contains(e.target)) return;
-      toast.remove();
-      document.removeEventListener('click', dismissOnOutsideClick, true);
-    };
-    // Attach after current click completes so opening the toast doesn't instantly dismiss it.
-    setTimeout(() => document.addEventListener('click', dismissOnOutsideClick, true), 0);
-  });
+  if (resetBtn) resetBtn.addEventListener('click', () => requestReset());
   const createBtn = document.getElementById('createSession');
   if (createBtn) createBtn.addEventListener('click', async ()=>{ await createSession(); if (sessionName) await loadSessionStatus(); });
 });
