@@ -675,6 +675,18 @@ function formatScoreDelta(value){
   return (value > 0 ? '+' : '') + value.toLocaleString();
 }
 
+function getProjectedFinalScore(finalScore, moveCount){
+  if (!Number.isFinite(finalScore) || moveCount <= 0) return 0;
+  if (moveCount >= GAME_ALPH.length) return finalScore;
+  return Math.round(finalScore * (GAME_ALPH.length / moveCount));
+}
+
+function getOnPaceRatingLabel(projectedRating, completed){
+  if (completed) return projectedRating;
+  if (projectedRating === 'Completed') return 'Below Fair';
+  return projectedRating;
+}
+
 function getAlfaScoreRating(finalScore){
   for (const tier of ALFA_RATING_TIERS) {
     if (finalScore >= tier.min) return tier.label;
@@ -734,7 +746,11 @@ function renderAlfaScorePanelMetrics(){
 
   const breakdown = getScoreBreakdown();
   const completed = isCompletedAlfaRun();
-  const progress = getAlfaRatingProgress(breakdown.finalScore);
+  const moveCount = submitted.length;
+  const ratingScore = completed
+    ? breakdown.finalScore
+    : getProjectedFinalScore(breakdown.finalScore, moveCount);
+  const progress = getAlfaRatingProgress(ratingScore);
   const speedScorePoints = getSpeedBonusScorePoints(breakdown.speedBonus);
   const lastDelta = finalScoreDeltas.length ? finalScoreDeltas[finalScoreDeltas.length - 1] : 0;
 
@@ -750,9 +766,13 @@ function renderAlfaScorePanelMetrics(){
   if (timeFactorEl) timeFactorEl.textContent = 'x' + breakdown.timeFactor.toFixed(2);
 
   if (alfaRatingLabelEl) {
-    alfaRatingLabelEl.textContent = completed
-      ? getAlfaScoreRating(breakdown.finalScore)
-      : progress.projectedRating;
+    if (moveCount === 0) {
+      alfaRatingLabelEl.textContent = '—';
+    } else {
+      alfaRatingLabelEl.textContent = completed
+        ? getAlfaScoreRating(breakdown.finalScore)
+        : getOnPaceRatingLabel(progress.projectedRating, false);
+    }
   }
   if (alfaRatingSubEl) {
     alfaRatingSubEl.textContent = completed ? 'Final rating' : 'On-pace rating';
