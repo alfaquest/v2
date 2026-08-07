@@ -124,6 +124,15 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');
   });
 
+  test('run clock stops on game over', async ({ page }) => {
+    await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
+    await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);
+
+    const elapsedAtGameOver = await page.locator('#elapsedTime').textContent();
+    await page.waitForTimeout(1500);
+    await expect(page.locator('#elapsedTime')).toHaveText(elapsedAtGameOver || '');
+  });
+
   test('game over after ten moves omits stuck helper hints', async ({ page }) => {
     const tenMoveDeadEnd = [
       'Antigua and Barbuda',

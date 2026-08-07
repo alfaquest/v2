@@ -552,6 +552,14 @@ function lockRunEndTime(){
   if (runStartedAtMs !== null && runEndedAtMs === null) runEndedAtMs = Date.now();
 }
 
+function markGameOver(){
+  if (gameOver) return;
+  gameOver = true;
+  lockRunEndTime();
+  currentEntryStartedAtMs = null;
+  syncLiveScoreTimer();
+}
+
 function getTargetSeconds(moveCount){
   const perMoveTarget = Math.max(0, moveCount) * ALFA_TIME_TARGET_PER_MOVE_SECONDS;
   return Math.max(ALFA_TIME_TARGET_MIN_SECONDS, perMoveTarget);
@@ -1112,7 +1120,7 @@ function updateUI(){
           statusEl.className = 'status-danger';
         }
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           hideCompletionSummary();
           const letter = (req || '?').toUpperCase();
           const allForLetter = COUNTRY_LIST.filter(c => c && c.charAt(0) === (req||'').toLowerCase());
@@ -1149,7 +1157,7 @@ function updateUI(){
     }catch(e){
       if (e && e.message && e.message.indexOf('GAME OVER') !== -1){
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           hideCompletionSummary();
           const lastCountry = submitted.length ? submitted[submitted.length - 1] : '';
           const displayName = lastCountry ? formatDisplayCountry(lastCountry) : 'your last answer';
@@ -1185,7 +1193,7 @@ function updateUI(){
           statusEl.className = 'status-danger';
         }
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
           showResetRequiredToast('Game over — no unused country can add the remaining letter(s): ' + rem + '.', 'error');
         }
@@ -1516,7 +1524,7 @@ function addCountryLocal(name){
     collectedSeq = getSequentialCollectedLetters(n, usedLetters);
     if (collectedSeq.length === 0) return showErrorToast('This country does not collect the next required letter(s) in sequence');
     if (requiredStart && collectedSeq.length === 1 && collectedSeq[0] === requiredStart){
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
@@ -1528,7 +1536,7 @@ function addCountryLocal(name){
     collectedAll = getAllNewLetters(n, usedLetters);
     if (collectedAll.length === 0) return showErrorToast('This country does not introduce any new letters');
     if (requiredStart && collectedAll.length === 1 && collectedAll[0] === requiredStart){
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
@@ -1552,7 +1560,7 @@ function addCountryLocal(name){
       saveLocal();
       scrollSubmittedListIntoView();
 
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
