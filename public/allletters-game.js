@@ -329,17 +329,99 @@ function hideGameOverSummary(){
   }
 }
 
+const GAME_OVER_EXAMPLE_LIMIT = 3;
+const GAME_OVER_HINT_MAX_MOVES = 10;
+
+function resolveGameOverDisplayRequired(required, submittedList){
+  const req = (required || '').toLowerCase();
+  if (req && req !== '?') return req;
+  if (submittedList.length > 0) {
+    const prev = submittedList.slice(0, -1);
+    try { return getRequiredStart(prev); } catch (e) { return '?'; }
+  }
+  return '?';
+}
+
+function countryContinuesChain(country, submittedList){
+  if (!country) return false;
+  const trial = submittedList.concat([country]);
+  try {
+    const nextReq = getRequiredStart(trial);
+    return findAvailableCountries(nextReq, new Set(), false).length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+function findValidContinuations(required, submittedList, maxExamples){
+  const max = maxExamples || GAME_OVER_EXAMPLE_LIMIT;
+  if (!required) return [];
+  const req = String(required).toLowerCase();
+  const out = [];
+  for (const c of COUNTRY_LIST) {
+    if (!c || c.charAt(0) !== req) continue;
+    if (submittedList.indexOf(c) !== -1) continue;
+    if (countryContinuesChain(c, submittedList)) {
+      out.push(c);
+      if (out.length >= max) break;
+    }
+  }
+  return out;
+}
+
+function buildGameOverExampleCountries(required, submittedList, unusedForLetter){
+  const req = (required || '').toLowerCase();
+  const displayRequired = resolveGameOverDisplayRequired(required, submittedList);
+  if (submittedList.length >= GAME_OVER_HINT_MAX_MOVES) {
+    return { examples: [], exampleLabel: '', displayRequired };
+  }
+  if (req && req !== '?') {
+    const valid = findValidContinuations(req, submittedList, GAME_OVER_EXAMPLE_LIMIT);
+    if (valid.length > 0) {
+      return {
+        examples: valid,
+        exampleLabel: 'Valid answers included',
+        displayRequired: req
+      };
+    }
+    const fallback = (unusedForLetter || []).slice(0, GAME_OVER_EXAMPLE_LIMIT);
+    if (fallback.length > 0) {
+      return {
+        examples: fallback,
+        exampleLabel: 'On the list for ' + req.toUpperCase(),
+        displayRequired: req
+      };
+    }
+    return { examples: [], exampleLabel: '', displayRequired: req };
+  }
+  if (submittedList.length > 0) {
+    const prev = submittedList.slice(0, -1);
+    let lastRequired = null;
+    try { lastRequired = getRequiredStart(prev); } catch (e) { return { examples: [], exampleLabel: '', displayRequired: '?' }; }
+    const valid = findValidContinuations(lastRequired, prev, GAME_OVER_EXAMPLE_LIMIT);
+    if (valid.length > 0) {
+      return {
+        examples: valid,
+        exampleLabel: 'Instead of ' + formatDisplayCountry(submittedList[submittedList.length - 1]) + ', try',
+        displayRequired: lastRequired
+      };
+    }
+  }
+  return { examples: [], exampleLabel: '', displayRequired: '?' };
+}
+
 function renderGameOverSummary(summary){
   if (typeof document === 'undefined' || !summary) return;
   ensureGameOverSummary();
   const el = document.getElementById('gameOverSummary');
   if (!el) return;
-  const letter = (summary.required || '?').toUpperCase();
+  const letter = (summary.displayRequired || summary.required || '?').toUpperCase();
   let examplesHtml = '';
   if (summary.examples && summary.examples.length > 0) {
     const names = summary.examples.map(c => formatDisplayCountry(c)).join(', ');
+    const label = summary.exampleLabel || ('Still on the list for ' + letter);
     examplesHtml =
-      '<div class="game-over-examples">Still on the list for ' + escapeHtml(letter) + ': ' +
+      '<div class="game-over-examples"><strong>' + escapeHtml(label) + ':</strong> ' +
       escapeHtml(names) + '</div>';
   }
   el.innerHTML =
@@ -468,6 +550,14 @@ function getElapsedSeconds(){
 
 function lockRunEndTime(){
   if (runStartedAtMs !== null && runEndedAtMs === null) runEndedAtMs = Date.now();
+}
+
+function markGameOver(){
+  if (gameOver) return;
+  gameOver = true;
+  lockRunEndTime();
+  currentEntryStartedAtMs = null;
+  syncLiveScoreTimer();
 }
 
 function getTargetSeconds(moveCount){
@@ -1030,7 +1120,7 @@ function updateUI(){
           statusEl.className = 'status-danger';
         }
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           hideCompletionSummary();
           const letter = (req || '?').toUpperCase();
           const allForLetter = COUNTRY_LIST.filter(c => c && c.charAt(0) === (req||'').toLowerCase());
@@ -1045,10 +1135,13 @@ function updateUI(){
               ? 'No remaining country beginning with "' + letter + '" can continue the chain from here.'
               : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.';
           }
+          const helper = buildGameOverExampleCountries(req, submitted, unusedForLetter);
           renderGameOverSummary({
             required: req || '?',
+            displayRequired: helper.displayRequired,
             reason,
-            examples: unusedForLetter
+            examples: helper.examples,
+            exampleLabel: helper.exampleLabel
           });
           showResetRequiredToast('Game over — required start is "' + letter + '". ' + reason, 'error');
         }
@@ -1064,13 +1157,20 @@ function updateUI(){
     }catch(e){
       if (e && e.message && e.message.indexOf('GAME OVER') !== -1){
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           hideCompletionSummary();
           const lastCountry = submitted.length ? submitted[submitted.length - 1] : '';
           const displayName = lastCountry ? formatDisplayCountry(lastCountry) : 'your last answer';
           const reason = 'No unused starting letter remains inside "' + displayName +
             '" to determine the next required letter.';
-          renderGameOverSummary({ required: '?', reason, examples: [] });
+          const helper = buildGameOverExampleCountries('?', submitted, []);
+          renderGameOverSummary({
+            required: helper.displayRequired || '?',
+            displayRequired: helper.displayRequired,
+            reason,
+            examples: helper.examples,
+            exampleLabel: helper.exampleLabel
+          });
           showResetRequiredToast(e.message + ' ' + reason, 'error');
         }
         const submitBtn = document.getElementById('submitCountry');
@@ -1093,7 +1193,7 @@ function updateUI(){
           statusEl.className = 'status-danger';
         }
         if (!gameOver){
-          gameOver = true;
+          markGameOver();
           const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
           showResetRequiredToast('Game over — no unused country can add the remaining letter(s): ' + rem + '.', 'error');
         }
@@ -1424,7 +1524,7 @@ function addCountryLocal(name){
     collectedSeq = getSequentialCollectedLetters(n, usedLetters);
     if (collectedSeq.length === 0) return showErrorToast('This country does not collect the next required letter(s) in sequence');
     if (requiredStart && collectedSeq.length === 1 && collectedSeq[0] === requiredStart){
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
@@ -1436,7 +1536,7 @@ function addCountryLocal(name){
     collectedAll = getAllNewLetters(n, usedLetters);
     if (collectedAll.length === 0) return showErrorToast('This country does not introduce any new letters');
     if (requiredStart && collectedAll.length === 1 && collectedAll[0] === requiredStart){
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
@@ -1460,7 +1560,7 @@ function addCountryLocal(name){
       saveLocal();
       scrollSubmittedListIntoView();
 
-      gameOver = true;
+      markGameOver();
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
