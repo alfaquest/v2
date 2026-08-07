@@ -1,92 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-	<title>Alfaquest Tutorial | alfaword.games</title>
-  </head>
-  <link rel="stylesheet" href="css/styleHelp.css">
-  <body>
-	<form>
-		<h1>GAME OBJECTIVE: </h1>
-		<p id ="paragraph1">
- 
-	<br>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alfaquest Tutorial | alfaword.games</title>
+  <link rel="stylesheet" href="css/game-shell.css" />
+  <link rel="stylesheet" href="css/help.css" />
+</head>
+<body class="game-page help-page">
+  <div class="game-shell help-shell">
+    <header class="help-header">
+      <a class="game-back" href="index.html">&larr; Menu</a>
+      <h1>Alfaquest sequencing tutorial</h1>
+      <p class="help-lead">How starting letters chain together — and why some paths dead-end early.</p>
+    </header>
 
-	Navigate through a sequence or route of words from a stated category.  
-	Each word must begin with a unique starting letter. The first starting letter will always be 'A', the following starting letters will be determined by subsequent player choices.
-	<br>
-	<br>
-	For example the prototype category 'Countries of the world' contains 24 possible starting alphabetic letters. 
-	So to win the game you must run an unbroken sequence of all 24 available letters in an order determined by in-game decisions.
-	<br>
-	<br>
-	The starting letter of each word (not counting the first, which to repeat will always be the letter 'A'),  
-	is decided by its position within, and availability from the previously  
-	selected word in the game. 
-	<br>
-	<br>
-There are potentially thousands of sequences which can be followed inside ALΦAQUEST, however only a handful of these sequences will result in a successfully completed game.<br>
-	<h2>EXAMPLE: </h2> 
-	<p id ="paragraph2">
-		<br>
-		The following sequence will result in 'Game Over' for a player after 5 of the possible 24 rounds: <br><br>
-1. Albania<br>
-2. Latvia<br>
-3. Tonga<br>
-4. Oman<br>
-5. Malta<br><br>
-This is because all letters in 'Malta' have been used as starting letters up to this point.<br><br>
-'M' for 'Malta', 'A' for 'Albania', 'L' for 'Latvia' & 'T' for 'Tonga', there are no unused starting letters within 'Malta' remaining to continue the game.<br><br>
-You can see selection of Latvia in answer 2 results in next starting letter of 'T' for answer 3, as letter 'A' was already used for answer 1.<br><br>
+    <article class="help-card game-card">
+      <h2>Objective</h2>
+      <p>
+        Navigate a sequence of country names. Each answer must use a <strong>unique starting letter</strong>.
+        The first answer always starts with <strong>A</strong>. Every later required letter comes from inside
+        your previous answer — the first unused letter in that country name, reading left to right.
+      </p>
+      <p>
+        In the Countries category there are <strong>24</strong> valid starting letters (W and X are skipped).
+        Win by completing all 24 without hitting a dead-end.
+      </p>
+    </article>
 
-The following sequence will not result in Game Over after 5 rounds: <br><br>
-1. Albania<br>
-2. Latvia<br>
-3. Tonga<br>
-4. Oman<br>
-5. Malaysia<br><br>
-The game now continues to round 6 with the next available letter contained inside the word 'Malaysia', which is 'y'. <br> You must now think of a country beginning with the letter 'Y' to proceed to round 7. Letters 's' and 'i' do not come into play at this point.
-<br>
-<br>
-<i>Top tip: Track your game progress by keeping a close eye on "used/next starting letter" fields.</i> </p>
-<h2>
-	GAME PROGRESSION: 
-	</h2>
-	<p id ="paragraph3">
-		<br>
-	As the game progresses, it is possible for the next starting letter to  
-	be contained in position 4, 5, 10 or even position 20 of the previously  
-	selected word. 
-<br><br>
-	The game will continue until all starting letters have been navigated  
-	successfully in sequence, a glorious victory! Or if a game terminating  
-	dead end is reached, a not too dishonourable failure. 
-<br><br>
-	A dead end is a scenario in which the most recent chosen word consists  
-	of only previously used first letters, leaving the player with no available letters to continue,  
-	resulting in an unsuccessful game. 
+    <article class="help-card game-card">
+      <h2>How the next letter is chosen</h2>
+      <p>
+        After each submission, scan the previous country name from the start. Skip any letter that has
+        already been used as a starting letter earlier in your run. The first letter you have not used yet
+        becomes the required start for your next answer.
+      </p>
+      <p>
+        On the play page, watch the gold <strong>required letter</strong> banner and the grid highlight —
+        they show exactly which letter you need next.
+      </p>
+    </article>
 
-<br><br>
-	Good luck and no cheating, not that it will help you much! 
-	 </p> 
+    <article class="help-card game-card">
+      <h2>Example — dead-end after 5 moves</h2>
+      <p>This sequence ends the game on move 5:</p>
+      <div class="help-example help-example--fail">
+        <span class="help-example-title">Game over at Malta</span>
+        <ol>
+          <li>Albania</li>
+          <li>Latvia</li>
+          <li>Tonga</li>
+          <li>Oman</li>
+          <li>Malta</li>
+        </ol>
+      </div>
+      <p>
+        By move 5, starting letters A, L, T, and O are already used. Inside <strong>Malta</strong>, the only
+        letters left are M, A, L, T, and A — all already used as starters. There is no unused starting letter
+        left inside the word, so the game ends.
+      </p>
+      <p>
+        Notice how Latvia forces the next required letter to <strong>T</strong> (not A), because A was already
+        used for Albania.
+      </p>
+    </article>
 
-	 <p id="help">
-		<a href="./index.html" target="_blank"><body link="cyan" vlink="yellow" alink="green">return to ALΦAQUEST</a>
-	</p>
-	<h2>SCORING</h2>
-	<p>
-	Completed Alfaquest runs earn a score and rating. On the
-	<a href="alfaquest.html">play page</a>, enable <strong>Show scoring</strong> to see live points, per-answer deltas, and rating progress.
-	<br><br>
-	Letter rarity, move position, typing speed, and total run time all feed into your final score. Ratings run from Legendary down to Completed.
-	</p>
-		
-</form>
-  </body>
+    <article class="help-card game-card">
+      <h2>Example — avoiding the trap</h2>
+      <p>Same run, but Malaysia on move 5 keeps the game alive:</p>
+      <div class="help-example help-example--success">
+        <span class="help-example-title">Continues to move 6</span>
+        <ol>
+          <li>Albania</li>
+          <li>Latvia</li>
+          <li>Tonga</li>
+          <li>Oman</li>
+          <li>Malaysia</li>
+        </ol>
+      </div>
+      <p>
+        After Malaysia, the next unused letter inside the word is <strong>Y</strong>. You must submit a
+        country starting with Y to reach move 7. Letters S and I inside Malaysia are not used for this rule.
+      </p>
+      <p class="help-tip"><em>Tip:</em> Track used starting letters on the grid — blue cells are still available, muted cells are done.</p>
+    </article>
 
-</html>	
-	
-	
-	
-	
-	
+    <article class="help-card game-card">
+      <h2>Longer chains</h2>
+      <p>
+        As the run grows, the required letter can come from deep inside a long country name — position 4, 10,
+        or even later. Only the <em>first unused</em> letter in the previous answer matters.
+      </p>
+      <p>
+        You win when all 24 starting letters are completed. You lose when no valid country can continue the
+        chain, or when your last answer has no unused starting letter left inside it.
+      </p>
+    </article>
+
+    <article class="help-card game-card">
+      <h2>Scoring</h2>
+      <p>
+        Completed Alfaquest runs earn a score and rating. On the
+        <a href="alfaquest.html">play page</a>, enable <strong>Show scoring</strong> to see live points,
+        per-answer deltas, and rating progress.
+      </p>
+      <p>
+        Letter rarity, move position, typing speed, and total run time all feed into your final score.
+        Ratings run from Legendary down to Completed.
+      </p>
+    </article>
+
+    <div class="help-actions">
+      <a href="alfaquest.html">Play Alfaquest</a>
+      <a href="index.html" class="ghost">Back to menu</a>
+    </div>
+  </div>
+
+  <script src="scripts/starfield-bg.js"></script>
+</body>
+</html>
