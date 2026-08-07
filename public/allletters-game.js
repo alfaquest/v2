@@ -1502,6 +1502,7 @@ function renderLetterGrid(){
 }
 
 function addCountryLocal(name){
+  hideResetConfirm();
   const n = normalize(name);
   const isAlfa = isAlfaMode();
   const isEasyFill = isEasyAlfafillMode();
@@ -1692,26 +1693,63 @@ async function loadSessionStatus(){
   }catch(e){ showErrorToast('Error loading session: '+e.message); }
 }
 
+function ensureResetConfirmBar(){
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('resetConfirmBar')) return;
+  const playCard = document.querySelector('.game-card--play');
+  if (!playCard) return;
+  const bar = document.createElement('div');
+  bar.id = 'resetConfirmBar';
+  bar.className = 'reset-confirm-bar';
+  bar.style.display = 'none';
+  bar.innerHTML =
+    '<p class="reset-confirm-text">Reset this game? Your progress will be cleared.</p>' +
+    '<div class="reset-confirm-actions">' +
+    '<button type="button" id="resetConfirmYes">Yes, reset</button>' +
+    '<button type="button" id="resetConfirmNo" class="ghost">Keep playing</button>' +
+    '</div>';
+  playCard.appendChild(bar);
+  const yesBtn = document.getElementById('resetConfirmYes');
+  const noBtn = document.getElementById('resetConfirmNo');
+  if (yesBtn) yesBtn.addEventListener('click', () => {
+    hideResetConfirm();
+    resetLocal();
+  });
+  if (noBtn) noBtn.addEventListener('click', () => hideResetConfirm());
+}
+
+function showResetConfirm(){
+  ensureResetConfirmBar();
+  const bar = document.getElementById('resetConfirmBar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  const resetBtn = document.getElementById('resetLocal');
+  if (resetBtn) resetBtn.setAttribute('aria-expanded', 'true');
+}
+
+function hideResetConfirm(){
+  const bar = document.getElementById('resetConfirmBar');
+  if (bar) bar.style.display = 'none';
+  const resetBtn = document.getElementById('resetLocal');
+  if (resetBtn) resetBtn.removeAttribute('aria-expanded');
+}
+
 function requestReset(){
-  if (gameOver) {
+  if (gameOver || submitted.length === 0) {
+    hideResetConfirm();
     resetLocal();
     return;
   }
-  showToast('Reset game? Tap here to confirm.', 'info', 0, () => resetLocal());
-  const dismissOnOutsideClick = (e) => {
-    const toast = document.getElementById('alfa-toast');
-    if (!toast){
-      document.removeEventListener('click', dismissOnOutsideClick, true);
-      return;
-    }
-    if (toast.contains(e.target)) return;
-    toast.remove();
-    document.removeEventListener('click', dismissOnOutsideClick, true);
-  };
-  setTimeout(() => document.addEventListener('click', dismissOnOutsideClick, true), 0);
+  const bar = document.getElementById('resetConfirmBar');
+  if (bar && bar.style.display !== 'none') {
+    hideResetConfirm();
+    return;
+  }
+  showResetConfirm();
 }
 
 function resetLocal(){
+  hideResetConfirm();
   submitted = [];
   usedLetters = new Set();
   submissionScores = [];
