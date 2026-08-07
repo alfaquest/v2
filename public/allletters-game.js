@@ -703,11 +703,20 @@ function scrollSubmittedListIntoView(){
   const list = document.getElementById('submittedList');
   if (!list || list.children.length <= 1) return;
   if (typeof window !== 'undefined' && window.matchMedia('(min-width: 801px)').matches) return;
-  const lastItem = list.lastElementChild;
-  if (!lastItem || typeof lastItem.scrollIntoView !== 'function') return;
-  const rect = lastItem.getBoundingClientRect();
-  if (rect.top >= 0 && rect.bottom <= window.innerHeight) return;
-  lastItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // Scroll within the sidebar list only — page scrollIntoView pulls mobile users
+  // away from the country input toward the board/sidebar below.
+  list.scrollTop = list.scrollHeight;
+}
+
+function focusCountryInput(){
+  if (typeof document === 'undefined') return;
+  const input = document.getElementById('countryInput');
+  if (!input || input.disabled || gameOver || completionShown) return;
+  try {
+    input.focus({ preventScroll: true });
+  } catch (e) {
+    input.focus();
+  }
 }
 
 function getElapsedSeconds(){
@@ -1905,6 +1914,7 @@ function addCountryLocal(name){
   updateUI();
   saveLocal();
   scrollSubmittedListIntoView();
+  focusCountryInput();
 }
 
 function saveLocal(){
@@ -2110,6 +2120,7 @@ window.addEventListener('load', ()=>{
     // automatically persist to server when a session exists
     if (sessionName){ await submitToServer(text); }
     input.value = '';
+    focusCountryInput();
   });
   input.addEventListener('keypress', (e)=>{ if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('submitCountry').click(); } });
   input.addEventListener('keydown', (e)=>{
