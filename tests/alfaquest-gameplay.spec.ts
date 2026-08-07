@@ -106,9 +106,22 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#submittedList')).toContainText('Albania');
 
     await page.locator('#resetLocal').click();
-    await page.locator('#alfa-toast').click();
+    await expect(page.locator('#resetConfirmBar')).toBeVisible();
+    await page.locator('#resetConfirmYes').click();
     await expect(page.locator('#submittedList')).toHaveText('');
     await expect(page.locator('#requiredLetterInfo')).toContainText('A');
+  });
+
+  test('reset confirm can be cancelled', async ({ page }) => {
+    await page.locator('#countryInput').fill('Albania');
+    await page.locator('#submitCountry').click();
+    await expect(page.locator('#submittedList')).toContainText('Albania');
+
+    await page.locator('#resetLocal').click();
+    await expect(page.locator('#resetConfirmBar')).toBeVisible();
+    await page.locator('#resetConfirmNo').click();
+    await expect(page.locator('#resetConfirmBar')).toBeHidden();
+    await expect(page.locator('#submittedList')).toContainText('Albania');
   });
 
   test('game over after documented five-move dead-end sequence', async ({ page }) => {
