@@ -149,6 +149,7 @@ test.describe('Alfaquest gameplay', () => {
   });
 
   test('reset highlight clears after game over reset', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
     await expect(page.locator('#resetLocal')).toHaveClass(/reset-required/);
 
