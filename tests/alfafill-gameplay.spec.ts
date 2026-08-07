@@ -46,7 +46,9 @@ test.describe('Alfaquest Easy', () => {
     await expect(page.locator('#remainingLetters')).toHaveText('0');
     await expect(page.locator('#completionSummary')).toBeVisible();
     await expect(page.locator('#completionSummary')).toContainText(/Victory — alphabet complete/i);
-    await expect(page.locator('#completionSummary')).toContainText(/Legendary|Excellent|Very good|Good|Fair|Keep Trying/i);
+    await expect(page.locator('#completionSummary')).toContainText(/Completed/i);
+    await expect(page.locator('#completionSummary')).toContainText(/Legendary runs use 6 or fewer/i);
+    await expect(page.locator('#completionSummary')).toContainText(/15 countries/i);
     await expect(page.locator('#alfa-toast')).toContainText(/Bravo!/i);
     await expect(page.locator('#submitCountry')).toBeDisabled();
     await expect(page.locator('#resetLocal')).toHaveClass(/reset-required/);
