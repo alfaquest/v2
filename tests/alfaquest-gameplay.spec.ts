@@ -115,13 +115,34 @@ test.describe('Alfaquest gameplay', () => {
     await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
 
     await expect(page.locator('#submittedList')).toContainText('Malta');
-    await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);
+    await expect(page.locator('#alfa-toast')).toContainText(/game over/i);
     await expect(page.locator('#gameOverSummary')).toBeVisible();
     await expect(page.locator('#gameOverSummary')).toContainText(/needed/i);
     await expect(page.locator('#gameOverSummary')).toContainText(/Malaysia/i);
+    await expect(page.locator('#resetLocal')).toHaveClass(/reset-required/);
     await expect(page.locator('#submitCountry')).toBeDisabled();
     await expect(page.locator('#countryInput')).toBeDisabled();
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');
+  });
+
+  test('reset highlight clears after game over reset', async ({ page }) => {
+    await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
+    await expect(page.locator('#resetLocal')).toHaveClass(/reset-required/);
+
+    await page.locator('#resetLocal').click();
+    await expect(page.locator('#resetLocal')).not.toHaveClass(/reset-required/);
+    await expect(page.locator('#submittedList')).toHaveText('');
+    await expect(page.locator('#submitCountry')).toBeEnabled();
+  });
+
+  test('game over summary Reset link clears the game', async ({ page }) => {
+    await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malta']);
+    await expect(page.locator('#gameOverSummary .game-over-reset-link')).toBeVisible();
+
+    await page.locator('#gameOverSummary .game-over-reset-link').click();
+    await expect(page.locator('#submittedList')).toHaveText('');
+    await expect(page.locator('#gameOverSummary')).toBeHidden();
+    await expect(page.locator('#submitCountry')).toBeEnabled();
   });
 
   test('run clock stops on game over', async ({ page }) => {

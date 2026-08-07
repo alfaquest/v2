@@ -258,6 +258,25 @@ button {
   color: #7dd3fc;
 }
 
+.game-over-reset-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #ff8a98;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  min-height: auto;
+}
+
+.game-over-reset-link:hover {
+  color: #ffe4e6;
+}
+
 .game-over-title {
   font-weight: 800;
   color: #ff8a98;
