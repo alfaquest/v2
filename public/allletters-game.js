@@ -885,33 +885,13 @@ function showToast(message, variant, durationMs, onClick){
   const existing = document.getElementById('alfa-toast');
   if (existing) existing.remove();
 
-  const palettes = {
-    success: { text: '#05210f', bg: 'linear-gradient(90deg, #22c55e, #86efac)', shadow: '0 8px 24px rgba(34, 197, 94, 0.35)' },
-    error: { text: '#2b0a0a', bg: 'linear-gradient(90deg, #ef4444, #fca5a5)', shadow: '0 8px 24px rgba(239, 68, 68, 0.35)' },
-    info: { text: '#021023', bg: 'linear-gradient(90deg, #38bdf8, #7dd3fc)', shadow: '0 8px 24px rgba(56, 189, 248, 0.35)' }
-  };
-  const palette = palettes[variant] || palettes.info;
-
   const toast = document.createElement('div');
   toast.id = 'alfa-toast';
+  toast.className = 'alfa-toast alfa-toast--' + (variant || 'info');
   toast.textContent = message;
-  toast.style.position = 'fixed';
-  toast.style.top = '18px';
-  toast.style.left = '50%';
-  toast.style.transform = 'translateX(-50%)';
-  toast.style.zIndex = '9999';
-  toast.style.padding = '12px 18px';
-  toast.style.borderRadius = '999px';
-  toast.style.color = palette.text;
-  toast.style.fontWeight = '800';
-  toast.style.letterSpacing = '0.2px';
-  toast.style.background = palette.bg;
-  toast.style.boxShadow = palette.shadow;
-  toast.style.opacity = '0';
-  toast.style.transition = 'opacity 220ms ease, transform 220ms ease';
   if (typeof onClick === 'function'){
-    toast.style.cursor = 'pointer';
-    toast.title = 'Tap to continue';
+    toast.classList.add('alfa-toast--actionable');
+    toast.title = 'Tap to reset';
     toast.addEventListener('click', () => {
       onClick();
       toast.remove();
@@ -920,15 +900,13 @@ function showToast(message, variant, durationMs, onClick){
   document.body.appendChild(toast);
 
   requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
+    toast.classList.add('alfa-toast--visible');
   });
 
   if (durationMs === 0) return;
   const displayMs = typeof durationMs === 'number' ? durationMs : 2600;
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(-6px)';
+    toast.classList.remove('alfa-toast--visible');
     setTimeout(() => toast.remove(), 240);
   }, displayMs);
 }
@@ -946,10 +924,23 @@ function showInfoToast(message, durationMs){
 }
 
 function showResetRequiredToast(message, variant){
-  const suffix = String(message).endsWith('.') ? ' Tap here to reset' : '. Tap here to reset';
-  showToast(message + suffix, variant || 'error', 0, () => {
+  const base = String(message || 'Game over')
+    .replace(/\s*(\.|)\s*tap (here )?to reset\s*$/i, '')
+    .replace(/\s*GAME OVER\.?\s*$/i, '')
+    .trim();
+  showToast((base || 'Game over') + ' — tap to reset', variant || 'error', 0, () => {
     resetLocal();
   });
+}
+
+function showGameOverResetToast(options){
+  const opts = (options && typeof options === 'object') ? options : {};
+  if (opts.summaryShown) {
+    showToast('Game over', 'error', 2600);
+    return;
+  }
+  const detail = String(opts.detail || 'Game over').trim();
+  showResetRequiredToast(detail, 'error');
 }
 
 function getEasyModeRating(moveCount){
@@ -1143,7 +1134,7 @@ function updateUI(){
             examples: helper.examples,
             exampleLabel: helper.exampleLabel
           });
-          showResetRequiredToast('Game over — required start is "' + letter + '". ' + reason, 'error');
+          showGameOverResetToast({ summaryShown: true });
         }
         if (submitBtn) submitBtn.disabled = true;
         if (input) input.disabled = true;
@@ -1171,7 +1162,7 @@ function updateUI(){
             examples: helper.examples,
             exampleLabel: helper.exampleLabel
           });
-          showResetRequiredToast(e.message + ' ' + reason, 'error');
+          showGameOverResetToast({ summaryShown: true });
         }
         const submitBtn = document.getElementById('submitCountry');
         const input = document.getElementById('countryInput');
@@ -1195,7 +1186,7 @@ function updateUI(){
         if (!gameOver){
           markGameOver();
           const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
-          showResetRequiredToast('Game over — no unused country can add the remaining letter(s): ' + rem + '.', 'error');
+          showGameOverResetToast({ detail: 'Game over' });
         }
         if (submitBtn) submitBtn.disabled = true;
         if (input) input.disabled = true;
@@ -1529,7 +1520,7 @@ function addCountryLocal(name){
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showResetRequiredToast('Dead-end move: this country only collects the required letter and does not create a valid continuation. GAME OVER.', 'error');
+      showGameOverResetToast({ detail: 'Dead-end move' });
       return;
     }
   } else if (isSeqFull){
@@ -1541,7 +1532,7 @@ function addCountryLocal(name){
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showResetRequiredToast('Dead-end move: this country only collects the required letter and does not create a valid continuation. GAME OVER.', 'error');
+      showGameOverResetToast({ detail: 'Dead-end move' });
       return;
     }
   } else if (isNormal) {
@@ -1565,7 +1556,7 @@ function addCountryLocal(name){
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showResetRequiredToast('Game over — this submission does not introduce any new letters.', 'error');
+      showGameOverResetToast({ detail: 'Game over' });
       return;
     }
   } else if (isEasyFill) {
