@@ -39,3 +39,26 @@ test('letter grid does not shift on first submit (mobile)', async ({ page }) => 
   expect(after).toBeTruthy();
   expect(Math.abs((after!.y - before!.y) - (scrollAfter - scrollBefore))).toBeLessThan(2);
 });
+
+test('mobile keeps country input near top after multiple submits', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/alfaquest.html');
+  await page.waitForSelector('#letterGrid .letter-cell');
+
+  const inputBoxBefore = await page.locator('#countryInput').boundingBox();
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+
+  for (const country of ['Albania', 'Latvia']) {
+    await page.fill('#countryInput', country);
+    await page.click('#submitCountry');
+    await expect(page.locator('#submittedList')).toContainText(country);
+  }
+
+  const inputBoxAfter = await page.locator('#countryInput').boundingBox();
+  const scrollAfter = await page.evaluate(() => window.scrollY);
+
+  expect(inputBoxBefore).toBeTruthy();
+  expect(inputBoxAfter).toBeTruthy();
+  expect(Math.abs((inputBoxAfter!.y - inputBoxBefore!.y) - (scrollAfter - scrollBefore))).toBeLessThan(24);
+  await expect(page.locator('#countryInput')).toBeFocused();
+});
