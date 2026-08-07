@@ -239,7 +239,7 @@ function renderSessionInfo(requiredLetter, statusText, pulseRequired, requiredEx
 
   if (requiredEl) {
     if (hasRequired) {
-      const pulseClass = pulseRequired ? ' required-pill-pulse' : '';
+      const pulseClass = (pulseRequired && !isMobilePlayLayout()) ? ' required-pill-pulse' : '';
       let hintHtml = '';
       if (requiredExplanation) {
         hintHtml = '<div class="required-letter-hint">' + escapeHtml(requiredExplanation) + '</div>';
@@ -698,13 +698,24 @@ function configureCountryInput(){
   input.setAttribute('inputmode', 'text');
 }
 
+function isMobilePlayLayout(){
+  return (typeof window !== 'undefined') && window.matchMedia('(max-width: 800px)').matches;
+}
+
+function scrollPlayInputIntoView(){
+  if (!isMobilePlayLayout()) return;
+  const playCard = document.querySelector('.game-card--play');
+  const target = playCard || document.getElementById('countryInput');
+  if (!target) return;
+  const top = target.getBoundingClientRect().top + window.scrollY - 12;
+  window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' });
+}
+
 function scrollSubmittedListIntoView(){
   if (typeof document === 'undefined') return;
+  if (isMobilePlayLayout()) return;
   const list = document.getElementById('submittedList');
   if (!list || list.children.length <= 1) return;
-  if (typeof window !== 'undefined' && window.matchMedia('(min-width: 801px)').matches) return;
-  // Scroll within the sidebar list only — page scrollIntoView pulls mobile users
-  // away from the country input toward the board/sidebar below.
   list.scrollTop = list.scrollHeight;
 }
 
@@ -712,10 +723,30 @@ function focusCountryInput(){
   if (typeof document === 'undefined') return;
   const input = document.getElementById('countryInput');
   if (!input || input.disabled || gameOver || completionShown) return;
+  scrollPlayInputIntoView();
   try {
     input.focus({ preventScroll: true });
   } catch (e) {
     input.focus();
+  }
+  if (isMobilePlayLayout()) {
+    requestAnimationFrame(scrollPlayInputIntoView);
+  }
+}
+
+function finishSuccessfulSubmit(){
+  const savedScrollY = isMobilePlayLayout() ? window.scrollY : null;
+  updateUI();
+  saveLocal();
+  scrollSubmittedListIntoView();
+  if (isMobilePlayLayout()) {
+    requestAnimationFrame(() => {
+      if (savedScrollY !== null) window.scrollTo(0, savedScrollY);
+      focusCountryInput();
+      requestAnimationFrame(scrollPlayInputIntoView);
+    });
+  } else {
+    focusCountryInput();
   }
 }
 
@@ -1911,10 +1942,7 @@ function addCountryLocal(name){
   } else {
     for (const ch of n) if (ch >= 'a' && ch <= 'z') usedLetters.add(ch);
   }
-  updateUI();
-  saveLocal();
-  scrollSubmittedListIntoView();
-  focusCountryInput();
+  finishSuccessfulSubmit();
 }
 
 function saveLocal(){
@@ -2120,7 +2148,6 @@ window.addEventListener('load', ()=>{
     // automatically persist to server when a session exists
     if (sessionName){ await submitToServer(text); }
     input.value = '';
-    focusCountryInput();
   });
   input.addEventListener('keypress', (e)=>{ if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('submitCountry').click(); } });
   input.addEventListener('keydown', (e)=>{

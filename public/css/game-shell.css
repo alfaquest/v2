@@ -263,6 +263,7 @@ body.game-page {
   list-style: none;
   max-height: 280px;
   overflow: auto;
+  overflow-anchor: none;
 }
 
 #submittedList li {
@@ -520,6 +521,11 @@ body.game-page {
 
   #submittedList {
     max-height: 220px;
+  }
+
+  .game-row--board,
+  .game-sidebar {
+    overflow-anchor: none;
   }
 }
 
