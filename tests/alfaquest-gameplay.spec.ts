@@ -124,6 +124,31 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');
   });
 
+  test('game over after ten moves omits stuck helper hints', async ({ page }) => {
+    const tenMoveDeadEnd = [
+      'Antigua and Barbuda',
+      'North Macedonia',
+      'Oman',
+      'Marshall Islands',
+      'Republic of the Congo',
+      'Equatorial Guinea',
+      'Qatar',
+      'Trinidad and Tobago',
+      'Ivory Coast',
+      'Vietnam',
+    ];
+    await submitCountries(page, tenMoveDeadEnd);
+
+    await expect(page.locator('#submittedList')).toContainText('Vietnam');
+    await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);
+    await expect(page.locator('#gameOverSummary')).toBeVisible();
+    await expect(page.locator('#gameOverSummary')).toContainText(/needed/i);
+    await expect(page.locator('#gameOverSummary')).not.toContainText(/Valid answers included/i);
+    await expect(page.locator('#gameOverSummary')).not.toContainText(/Instead of/i);
+    await expect(page.locator('#gameOverSummary')).not.toContainText(/On the list for/i);
+    await expect(page.locator('#gameOverSummary')).not.toContainText(/Malaysia/i);
+  });
+
   test('continues after round five when Malaysia avoids the Malta dead-end', async ({ page }) => {
     await submitCountries(page, ['Albania', 'Latvia', 'Tonga', 'Oman', 'Malaysia']);
 

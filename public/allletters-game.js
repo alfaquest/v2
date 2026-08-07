@@ -330,6 +330,17 @@ function hideGameOverSummary(){
 }
 
 const GAME_OVER_EXAMPLE_LIMIT = 3;
+const GAME_OVER_HINT_MAX_MOVES = 10;
+
+function resolveGameOverDisplayRequired(required, submittedList){
+  const req = (required || '').toLowerCase();
+  if (req && req !== '?') return req;
+  if (submittedList.length > 0) {
+    const prev = submittedList.slice(0, -1);
+    try { return getRequiredStart(prev); } catch (e) { return '?'; }
+  }
+  return '?';
+}
 
 function countryContinuesChain(country, submittedList){
   if (!country) return false;
@@ -360,6 +371,10 @@ function findValidContinuations(required, submittedList, maxExamples){
 
 function buildGameOverExampleCountries(required, submittedList, unusedForLetter){
   const req = (required || '').toLowerCase();
+  const displayRequired = resolveGameOverDisplayRequired(required, submittedList);
+  if (submittedList.length >= GAME_OVER_HINT_MAX_MOVES) {
+    return { examples: [], exampleLabel: '', displayRequired };
+  }
   if (req && req !== '?') {
     const valid = findValidContinuations(req, submittedList, GAME_OVER_EXAMPLE_LIMIT);
     if (valid.length > 0) {
