@@ -118,6 +118,7 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#alfa-toast')).toContainText(/game over|GAME OVER/i);
     await expect(page.locator('#gameOverSummary')).toBeVisible();
     await expect(page.locator('#gameOverSummary')).toContainText(/needed/i);
+    await expect(page.locator('#gameOverSummary')).toContainText(/Malaysia/i);
     await expect(page.locator('#submitCountry')).toBeDisabled();
     await expect(page.locator('#countryInput')).toBeDisabled();
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');

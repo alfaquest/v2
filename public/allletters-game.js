@@ -329,17 +329,84 @@ function hideGameOverSummary(){
   }
 }
 
+const GAME_OVER_EXAMPLE_LIMIT = 3;
+
+function countryContinuesChain(country, submittedList){
+  if (!country) return false;
+  const trial = submittedList.concat([country]);
+  try {
+    const nextReq = getRequiredStart(trial);
+    return findAvailableCountries(nextReq, new Set(), false).length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+function findValidContinuations(required, submittedList, maxExamples){
+  const max = maxExamples || GAME_OVER_EXAMPLE_LIMIT;
+  if (!required) return [];
+  const req = String(required).toLowerCase();
+  const out = [];
+  for (const c of COUNTRY_LIST) {
+    if (!c || c.charAt(0) !== req) continue;
+    if (submittedList.indexOf(c) !== -1) continue;
+    if (countryContinuesChain(c, submittedList)) {
+      out.push(c);
+      if (out.length >= max) break;
+    }
+  }
+  return out;
+}
+
+function buildGameOverExampleCountries(required, submittedList, unusedForLetter){
+  const req = (required || '').toLowerCase();
+  if (req && req !== '?') {
+    const valid = findValidContinuations(req, submittedList, GAME_OVER_EXAMPLE_LIMIT);
+    if (valid.length > 0) {
+      return {
+        examples: valid,
+        exampleLabel: 'Valid answers included',
+        displayRequired: req
+      };
+    }
+    const fallback = (unusedForLetter || []).slice(0, GAME_OVER_EXAMPLE_LIMIT);
+    if (fallback.length > 0) {
+      return {
+        examples: fallback,
+        exampleLabel: 'On the list for ' + req.toUpperCase(),
+        displayRequired: req
+      };
+    }
+    return { examples: [], exampleLabel: '', displayRequired: req };
+  }
+  if (submittedList.length > 0) {
+    const prev = submittedList.slice(0, -1);
+    let lastRequired = null;
+    try { lastRequired = getRequiredStart(prev); } catch (e) { return { examples: [], exampleLabel: '', displayRequired: '?' }; }
+    const valid = findValidContinuations(lastRequired, prev, GAME_OVER_EXAMPLE_LIMIT);
+    if (valid.length > 0) {
+      return {
+        examples: valid,
+        exampleLabel: 'Instead of ' + formatDisplayCountry(submittedList[submittedList.length - 1]) + ', try',
+        displayRequired: lastRequired
+      };
+    }
+  }
+  return { examples: [], exampleLabel: '', displayRequired: '?' };
+}
+
 function renderGameOverSummary(summary){
   if (typeof document === 'undefined' || !summary) return;
   ensureGameOverSummary();
   const el = document.getElementById('gameOverSummary');
   if (!el) return;
-  const letter = (summary.required || '?').toUpperCase();
+  const letter = (summary.displayRequired || summary.required || '?').toUpperCase();
   let examplesHtml = '';
   if (summary.examples && summary.examples.length > 0) {
     const names = summary.examples.map(c => formatDisplayCountry(c)).join(', ');
+    const label = summary.exampleLabel || ('Still on the list for ' + letter);
     examplesHtml =
-      '<div class="game-over-examples">Still on the list for ' + escapeHtml(letter) + ': ' +
+      '<div class="game-over-examples"><strong>' + escapeHtml(label) + ':</strong> ' +
       escapeHtml(names) + '</div>';
   }
   el.innerHTML =
@@ -1045,10 +1112,13 @@ function updateUI(){
               ? 'No remaining country beginning with "' + letter + '" can continue the chain from here.'
               : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.';
           }
+          const helper = buildGameOverExampleCountries(req, submitted, unusedForLetter);
           renderGameOverSummary({
             required: req || '?',
+            displayRequired: helper.displayRequired,
             reason,
-            examples: unusedForLetter
+            examples: helper.examples,
+            exampleLabel: helper.exampleLabel
           });
           showResetRequiredToast('Game over — required start is "' + letter + '". ' + reason, 'error');
         }
@@ -1070,7 +1140,14 @@ function updateUI(){
           const displayName = lastCountry ? formatDisplayCountry(lastCountry) : 'your last answer';
           const reason = 'No unused starting letter remains inside "' + displayName +
             '" to determine the next required letter.';
-          renderGameOverSummary({ required: '?', reason, examples: [] });
+          const helper = buildGameOverExampleCountries('?', submitted, []);
+          renderGameOverSummary({
+            required: helper.displayRequired || '?',
+            displayRequired: helper.displayRequired,
+            reason,
+            examples: helper.examples,
+            exampleLabel: helper.exampleLabel
+          });
           showResetRequiredToast(e.message + ' ' + reason, 'error');
         }
         const submitBtn = document.getElementById('submitCountry');
