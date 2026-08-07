@@ -338,6 +338,10 @@ const ALFAQUEST_MODE_LINKS = Object.freeze({
   easy: { href: 'alfafilleasy.html', label: 'Alfaquest Easy' }
 });
 
+function isTerminalRunState(){
+  return gameOver || completionShown;
+}
+
 function buildGameOverModeSuggestionsHtml(){
   const moves = submitted.length;
   if (isAlfaMode()) {
@@ -355,11 +359,29 @@ function buildGameOverModeSuggestionsHtml(){
       .join('');
     return '<div class="game-over-modes">' + intro + linkHtml + '.</div>';
   }
+  if (isEasyAlfafillMode()) {
+    return '<div class="game-over-modes">Ready for sequencing? Try ' +
+      '<a href="' + ALFAQUEST_MODE_LINKS.fill.href + '">' +
+      escapeHtml(ALFAQUEST_MODE_LINKS.fill.label) +
+      '</a> or ' +
+      '<a href="' + ALFAQUEST_MODE_LINKS.classic.href + '">' +
+      escapeHtml(ALFAQUEST_MODE_LINKS.classic.label) +
+      '</a>.</div>';
+  }
   if (isNormalAlfafillMode() && moves >= 3) {
     return '<div class="game-over-modes">Getting the hang of it? Try ' +
       '<a href="' + ALFAQUEST_MODE_LINKS.classic.href + '">' +
       escapeHtml(ALFAQUEST_MODE_LINKS.classic.label) +
       '</a> — the pure sequencing challenge.</div>';
+  }
+  if (isSequentialFullCollectMode()) {
+    return '<div class="game-over-modes">Need more flexibility? Try ' +
+      '<a href="' + ALFAQUEST_MODE_LINKS.fill.href + '">' +
+      escapeHtml(ALFAQUEST_MODE_LINKS.fill.label) +
+      '</a> or ' +
+      '<a href="' + ALFAQUEST_MODE_LINKS.easy.href + '">' +
+      escapeHtml(ALFAQUEST_MODE_LINKS.easy.label) +
+      '</a>.</div>';
   }
   return '';
 }
@@ -457,12 +479,18 @@ function renderGameOverSummary(summary){
       escapeHtml(names) + '</div>';
   }
   const modeSuggestionsHtml = buildGameOverModeSuggestionsHtml();
+  const titleHtml = summary.title
+    ? '<div class="game-over-title">' + summary.title + '</div>'
+    : '<div class="game-over-title">Game over — needed <strong>' + escapeHtml(letter) + '</strong></div>';
+  const hintHtml = isEasyAlfafillMode()
+    ? '<div class="game-over-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to try again.</div>'
+    : '<div class="game-over-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
   el.innerHTML =
-    '<div class="game-over-title">Game over — needed <strong>' + escapeHtml(letter) + '</strong></div>' +
+    titleHtml +
     '<div class="game-over-reason">' + escapeHtml(summary.reason) + '</div>' +
     examplesHtml +
     modeSuggestionsHtml +
-    '<div class="game-over-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
+    hintHtml;
   el.style.display = 'block';
   const resetLink = el.querySelector('.game-over-reset-link');
   if (resetLink) resetLink.addEventListener('click', () => requestReset());
@@ -529,15 +557,22 @@ function renderCompletionSummary(beatHighScore){
     ? '<div class="completion-high-score">New high score!</div>'
     : (highScoreRecord ? '<div class="completion-high-score muted">High score: ' +
       highScoreRecord.score.toLocaleString() + ' pts</div>' : '');
+  const ratingContext = getClassicRatingContext(breakdown.finalScore);
+  const ratingContextHtml = ratingContext
+    ? '<div class="completion-rating-context">' + escapeHtml(ratingContext) + '</div>'
+    : '';
   el.innerHTML =
     '<div class="completion-title">Victory — all 24 starting letters</div>' +
     '<div class="completion-rating">' + escapeHtml(rating) + '</div>' +
+    ratingContextHtml +
     '<div class="completion-stats">' +
     '<span><strong>Score:</strong> ' + breakdown.finalScore.toLocaleString() + '</span>' +
     '<span><strong>Countries:</strong> ' + submitted.length + '</span>' +
     '<span><strong>Time:</strong> ' + escapeHtml(timeLabel) + '</span>' +
     '</div>' +
     highScoreNote +
+    '<div class="completion-next-mode">Try ' +
+    '<a href="alfafillnormal.html">Alfaquest Fill</a> for the same chain rules with visible alphabet progress.</div>' +
     '<button type="button" id="copyResultBtn" class="completion-copy-btn">Copy result</button>';
   el.style.display = 'block';
   const copyBtn = document.getElementById('copyResultBtn');
@@ -574,6 +609,9 @@ function renderFillCompletionSummary(){
   } else {
     rating = getHardModeRating(moveCount);
     modeLabel = 'Alfaquest Strict';
+    nextModeHtml =
+      '<div class="completion-next-mode">Try ' +
+      '<a href="alfafillnormal.html">Alfaquest Fill</a> for chain-based sequencing with visible alphabet progress.</div>';
   }
   const ratingContext = getFillModeRatingContext(moveCount);
   const ratingContextHtml = ratingContext
@@ -595,10 +633,35 @@ function renderFillCompletionSummary(){
   if (resetLink) resetLink.addEventListener('click', () => requestReset());
 }
 
+function getClassicRatingContext(finalScore){
+  const legendaryMin = ALFA_RATING_TIERS[0].min;
+  if (finalScore >= legendaryMin) {
+    return 'Top-tier run — Legendary rating at ' + finalScore.toLocaleString() + ' points.';
+  }
+  return 'Legendary runs score ' + legendaryMin.toLocaleString() + ' points or more.';
+}
+
+function getSequentialRequiredLetterContext(){
+  const req = getNextSequentialRequiredLetter();
+  if (!req) return null;
+  if (submitted.length === 0) {
+    return {
+      required: req,
+      explanation: 'Strict mode starts at A and follows the alphabet order (W and X are skipped).'
+    };
+  }
+  return {
+    required: req,
+    explanation: 'Submit a country starting with ' + req.toUpperCase() +
+      ' that collects all of its new letters toward clearing the alphabet.'
+  };
+}
+
 function handleRunComplete(){
   if (completionShown) return;
   completionShown = true;
   hideGameOverSummary();
+  renderSessionInfo(null);
   lockRunEndTime();
   const beatHighScore = isAlfaMode() ? maybeUpdateHighScore() : false;
   if (isAlfaMode()) renderCompletionSummary(beatHighScore);
@@ -1277,6 +1340,9 @@ function updateUI(){
       if (isAlfa || isNormal) {
         const context = getRequiredLetterContext(submitted);
         if (context && context.explanation) requiredExplanation = context.explanation;
+      } else if (isSeq || isSeqFull) {
+        const context = getSequentialRequiredLetterContext();
+        if (context && context.explanation) requiredExplanation = context.explanation;
       }
       renderSessionInfo(requiredLabel, null, shouldPulse, requiredExplanation);
       lastRenderedRequiredLetter = requiredLabel;
@@ -1324,11 +1390,13 @@ function updateUI(){
         if (input) input.disabled = true;
       } else {
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
-        gameOver = false;
-        hideGameOverSummary();
-        clearResetHighlight();
-        if (submitBtn) submitBtn.disabled = false;
-        if (input) input.disabled = false;
+        if (!isTerminalRunState()) {
+          gameOver = false;
+          hideGameOverSummary();
+          clearResetHighlight();
+          if (submitBtn) submitBtn.disabled = false;
+          if (input) input.disabled = false;
+        }
       }
     }catch(e){
       if (e && e.message && e.message.indexOf('GAME OVER') !== -1){
@@ -1370,14 +1438,26 @@ function updateUI(){
         }
         if (!gameOver){
           markGameOver();
+          hideCompletionSummary();
           const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
-          showGameOverResetToast({ detail: 'Game over' });
+          const reason = unreachable.length === 1
+            ? 'No remaining country can add the letter "' + rem + '" to your collection.'
+            : 'No remaining countries can add these letters: ' + rem + '.';
+          renderGameOverSummary({
+            title: 'Game over — letters unreachable',
+            required: unreachable[0] || '?',
+            displayRequired: unreachable.length === 1 ? unreachable[0] : '?',
+            reason,
+            examples: [],
+            exampleLabel: ''
+          });
+          showGameOverResetToast({ summaryShown: true });
         }
         if (submitBtn) submitBtn.disabled = true;
         if (input) input.disabled = true;
       } else {
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
-        if (remainingLetters.length > 0) {
+        if (remainingLetters.length > 0 && !isTerminalRunState()) {
           gameOver = false;
           clearResetHighlight();
           if (submitBtn) submitBtn.disabled = false;
@@ -1710,24 +1790,56 @@ function addCountryLocal(name){
     collectedSeq = getSequentialCollectedLetters(n, usedLetters);
     if (collectedSeq.length === 0) return showErrorToast('This country does not collect the next required letter(s) in sequence');
     if (requiredStart && collectedSeq.length === 1 && collectedSeq[0] === requiredStart){
+      submitted.push(n);
+      for (const ch of collectedSeq) usedLetters.add(ch);
+      updateUI();
+      saveLocal();
+      scrollSubmittedListIntoView();
+
       markGameOver();
+      hideCompletionSummary();
+      const displayName = formatDisplayCountry(n);
+      renderGameOverSummary({
+        required: requiredStart,
+        displayRequired: requiredStart,
+        reason: '"' + displayName + '" only adds "' + requiredStart.toUpperCase() +
+          '", which was already the required next letter. In Strict mode, you must collect additional new letters beyond the required start.',
+        examples: [],
+        exampleLabel: ''
+      });
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showGameOverResetToast({ detail: 'Dead-end move' });
+      showGameOverResetToast({ summaryShown: true });
       return;
     }
   } else if (isSeqFull){
     collectedAll = getAllNewLetters(n, usedLetters);
     if (collectedAll.length === 0) return showErrorToast('This country does not introduce any new letters');
     if (requiredStart && collectedAll.length === 1 && collectedAll[0] === requiredStart){
+      submitted.push(n);
+      for (const ch of collectedAll) usedLetters.add(ch);
+      updateUI();
+      saveLocal();
+      scrollSubmittedListIntoView();
+
       markGameOver();
+      hideCompletionSummary();
+      const displayName = formatDisplayCountry(n);
+      renderGameOverSummary({
+        required: requiredStart,
+        displayRequired: requiredStart,
+        reason: '"' + displayName + '" only adds "' + requiredStart.toUpperCase() +
+          '", which was already the required next letter. In Strict mode, you must collect additional new letters beyond the required start.',
+        examples: [],
+        exampleLabel: ''
+      });
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showGameOverResetToast({ detail: 'Dead-end move' });
+      showGameOverResetToast({ summaryShown: true });
       return;
     }
   } else if (isNormal) {
@@ -2011,4 +2123,32 @@ window.addEventListener('load', ()=>{
   if (resetBtn) resetBtn.addEventListener('click', () => requestReset());
   const createBtn = document.getElementById('createSession');
   if (createBtn) createBtn.addEventListener('click', async ()=>{ await createSession(); if (sessionName) await loadSessionStatus(); });
+
+  if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+    window.__ALFA_TEST__ = {
+      triggerEasyUnreachableGameOver(letters){
+        if (!isEasyAlfafillMode()) return;
+        markGameOver();
+        hideCompletionSummary();
+        const unreachable = (letters || ['j']).map(ch => String(ch).toLowerCase());
+        const rem = unreachable.map(ch => ch.toUpperCase()).join(', ');
+        const reason = unreachable.length === 1
+          ? 'No remaining country can add the letter "' + rem + '" to your collection.'
+          : 'No remaining countries can add these letters: ' + rem + '.';
+        renderGameOverSummary({
+          title: 'Game over — letters unreachable',
+          required: unreachable[0] || '?',
+          displayRequired: unreachable.length === 1 ? unreachable[0] : '?',
+          reason,
+          examples: [],
+          exampleLabel: ''
+        });
+        showGameOverResetToast({ summaryShown: true });
+        const submitBtn = document.getElementById('submitCountry');
+        const input = document.getElementById('countryInput');
+        if (submitBtn) submitBtn.disabled = true;
+        if (input) input.disabled = true;
+      }
+    };
+  }
 });
