@@ -6,7 +6,7 @@ async function openAlfafillPage(page: import('@playwright/test').Page, path: str
   await page.reload();
 }
 
-test.describe('Alfafill Easy', () => {
+test.describe('Alfaquest Easy', () => {
   test('accepts countries in any order and collects letters', async ({ page }) => {
     await openAlfafillPage(page, '/alfafilleasy.html');
     await page.locator('#countryInput').fill('Qatar');
@@ -19,7 +19,7 @@ test.describe('Alfafill Easy', () => {
   });
 });
 
-test.describe('Alfafill Normal', () => {
+test.describe('Alfaquest Fill', () => {
   test('enforces Alfaquest-style sequencing from A', async ({ page }) => {
     await openAlfafillPage(page, '/alfafillnormal.html');
     await page.locator('#countryInput').fill('Albania');
@@ -66,11 +66,13 @@ test.describe('Alfafill Normal', () => {
     await expect(page.locator('#gameOverSummary')).toBeVisible();
     await expect(page.locator('#gameOverSummary')).toContainText(/does not add any new letters/i);
     await expect(page.locator('#gameOverSummary')).toContainText(/Malta/i);
+    await expect(page.locator('#gameOverSummary .game-over-modes')).toContainText(/Alfaquest Classic/i);
+    await expect(page.locator('#gameOverSummary .game-over-modes a[href="alfaquest.html"]')).toBeVisible();
     await expect(page.locator('#submitCountry')).toBeDisabled();
   });
 });
 
-test.describe('Alfafill Hard', () => {
+test.describe('Alfaquest Strict', () => {
   test('requires starting letter A on first submission', async ({ page }) => {
     await openAlfafillPage(page, '/alfafillhard.html');
     await page.locator('#countryInput').fill('Germany');

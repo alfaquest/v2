@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 const gamePages = [
-  { path: '/alfaquest.html', heading: 'Alfaquest - Play' },
-  { path: '/alfafilleasy.html', heading: 'Alfafill - Easy mode' },
-  { path: '/alfafillnormal.html', heading: 'Alfafill - Normal mode' },
-  { path: '/alfafillhard.html', heading: 'Alfafill - Hard mode' },
+  { path: '/alfaquest.html', heading: 'Alfaquest Classic' },
+  { path: '/alfafilleasy.html', heading: 'Alfaquest Easy' },
+  { path: '/alfafillnormal.html', heading: 'Alfaquest Fill' },
+  { path: '/alfafillhard.html', heading: 'Alfaquest Strict' },
 ];
 
 for (const { path, heading } of gamePages) {

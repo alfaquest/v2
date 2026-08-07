@@ -8,7 +8,8 @@ test.describe('Help pages', () => {
     await page.goto('/helpv2.html');
     await expect(page.getByRole('heading', { name: /sequencing tutorial/i })).toBeVisible();
     await expect(page.locator('.game-back')).toHaveAttribute('href', 'index.html');
-    await expect(page.getByRole('link', { name: /Play Alfaquest/i })).toHaveAttribute('href', 'alfaquest.html');
+    await expect(page.getByRole('link', { name: /Practise in Alfaquest Fill/i })).toHaveAttribute('href', 'alfafillnormal.html');
+    await expect(page.getByRole('link', { name: /Play Alfaquest Classic/i })).toHaveAttribute('href', 'alfaquest.html');
     expect(pageErrors).toEqual([]);
   });
 

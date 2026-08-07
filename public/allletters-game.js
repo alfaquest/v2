@@ -332,6 +332,38 @@ function hideGameOverSummary(){
 const GAME_OVER_EXAMPLE_LIMIT = 3;
 const GAME_OVER_HINT_MAX_MOVES = 10;
 
+const ALFAQUEST_MODE_LINKS = Object.freeze({
+  classic: { href: 'alfaquest.html', label: 'Alfaquest Classic' },
+  fill: { href: 'alfafillnormal.html', label: 'Alfaquest Fill' },
+  easy: { href: 'alfafilleasy.html', label: 'Alfaquest Easy' }
+});
+
+function buildGameOverModeSuggestionsHtml(){
+  const moves = submitted.length;
+  if (isAlfaMode()) {
+    const links = moves <= 3
+      ? [ALFAQUEST_MODE_LINKS.easy, ALFAQUEST_MODE_LINKS.fill]
+      : [ALFAQUEST_MODE_LINKS.fill];
+    const intro = moves <= 3
+      ? 'New to sequencing? Try '
+      : 'Want visible alphabet progress while you practise the chain? Try ';
+    const linkHtml = links
+      .map((link, index) => {
+        const prefix = index === 0 ? '' : (index === links.length - 1 ? ' or ' : ', ');
+        return prefix + '<a href="' + link.href + '">' + escapeHtml(link.label) + '</a>';
+      })
+      .join('');
+    return '<div class="game-over-modes">' + intro + linkHtml + '.</div>';
+  }
+  if (isNormalAlfafillMode() && moves >= 3) {
+    return '<div class="game-over-modes">Getting the hang of it? Try ' +
+      '<a href="' + ALFAQUEST_MODE_LINKS.classic.href + '">' +
+      escapeHtml(ALFAQUEST_MODE_LINKS.classic.label) +
+      '</a> — the pure sequencing challenge.</div>';
+  }
+  return '';
+}
+
 function resolveGameOverDisplayRequired(required, submittedList){
   const req = (required || '').toLowerCase();
   if (req && req !== '?') return req;
@@ -424,10 +456,12 @@ function renderGameOverSummary(summary){
       '<div class="game-over-examples"><strong>' + escapeHtml(label) + ':</strong> ' +
       escapeHtml(names) + '</div>';
   }
+  const modeSuggestionsHtml = buildGameOverModeSuggestionsHtml();
   el.innerHTML =
     '<div class="game-over-title">Game over — needed <strong>' + escapeHtml(letter) + '</strong></div>' +
     '<div class="game-over-reason">' + escapeHtml(summary.reason) + '</div>' +
     examplesHtml +
+    modeSuggestionsHtml +
     '<div class="game-over-hint">Tap <button type="button" class="game-over-reset-link">Reset</button> to try again, or read the <a href="helpv2.html">sequencing tutorial</a>.</div>';
   el.style.display = 'block';
   const resetLink = el.querySelector('.game-over-reset-link');

@@ -21,9 +21,9 @@ test.describe('Homepage regression', () => {
 
   test('links to all game modes', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: /Play Alfaquest/i })).toHaveAttribute('href', 'alfaquest.html');
-    await expect(page.getByRole('link', { name: /Easy mode/i })).toHaveAttribute('href', 'alfafilleasy.html');
-    await expect(page.getByRole('link', { name: /Normal mode/i })).toHaveAttribute('href', 'alfafillnormal.html');
-    await expect(page.getByRole('link', { name: /Hard mode/i })).toHaveAttribute('href', 'alfafillhard.html');
+    await expect(page.getByRole('link', { name: /Play Alfaquest Classic/i })).toHaveAttribute('href', 'alfaquest.html');
+    await expect(page.getByRole('link', { name: /Play Alfaquest Fill/i })).toHaveAttribute('href', 'alfafillnormal.html');
+    await expect(page.getByRole('link', { name: /Play Alfaquest Easy/i })).toHaveAttribute('href', 'alfafilleasy.html');
+    await expect(page.getByRole('link', { name: /Play Alfaquest Strict/i })).toHaveAttribute('href', 'alfafillhard.html');
   });
 });
