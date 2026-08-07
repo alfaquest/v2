@@ -541,10 +541,15 @@ function renderFillCompletionSummary(){
     rating = getHardModeRating(moveCount);
     modeLabel = 'Alfaquest Strict';
   }
+  const ratingContext = getFillModeRatingContext(moveCount);
+  const ratingContextHtml = ratingContext
+    ? '<div class="completion-rating-context">' + escapeHtml(ratingContext) + '</div>'
+    : '';
 
   el.innerHTML =
     '<div class="completion-title">Victory — alphabet complete!</div>' +
     '<div class="completion-rating">' + escapeHtml(rating) + '</div>' +
+    ratingContextHtml +
     '<div class="completion-stats">' +
     '<span><strong>Mode:</strong> ' + escapeHtml(modeLabel) + '</span>' +
     '<span><strong>Countries:</strong> ' + moveCount + '</span>' +
@@ -1052,7 +1057,47 @@ function getEasyModeRating(moveCount){
   if (moveCount === 8) return 'Very good';
   if (moveCount === 9) return 'Good';
   if (moveCount === 10) return 'Fair';
-  return 'Keep Trying';
+  return 'Completed';
+}
+
+function getEasyModeLegendaryMaxMoves(){
+  return 6;
+}
+
+function getNormalModeLegendaryMaxMoves(){
+  return 12;
+}
+
+function getStrictModeLegendaryMaxMoves(){
+  return 8;
+}
+
+function getFillModeRatingContext(moveCount){
+  if (isEasyAlfafillMode()) {
+    const legendaryMax = getEasyModeLegendaryMaxMoves();
+    if (moveCount <= legendaryMax) {
+      return 'You cleared A–Z in ' + moveCount + ' countries — top-tier efficiency.';
+    }
+    return 'You cleared A–Z in ' + moveCount + ' countries. Legendary runs use ' +
+      legendaryMax + ' or fewer.';
+  }
+  if (isNormalAlfafillMode()) {
+    const legendaryMax = getNormalModeLegendaryMaxMoves();
+    if (moveCount <= legendaryMax) {
+      return 'You cleared A–Z in ' + moveCount + ' countries — top-tier efficiency.';
+    }
+    return 'You cleared A–Z in ' + moveCount + ' countries. Legendary runs use ' +
+      legendaryMax + ' or fewer.';
+  }
+  if (isSequentialFullCollectMode()) {
+    const legendaryMax = getStrictModeLegendaryMaxMoves();
+    if (moveCount <= legendaryMax) {
+      return 'You cleared A–Z in ' + moveCount + ' countries — top-tier efficiency.';
+    }
+    return 'You cleared A–Z in ' + moveCount + ' countries. Legendary runs use ' +
+      legendaryMax + ' or fewer.';
+  }
+  return '';
 }
 
 function getNormalModeRating(moveCount){

@@ -327,6 +327,13 @@ button {
   margin-bottom: 8px;
 }
 
+.completion-rating-context {
+  margin-bottom: 8px;
+  color: #d1fae5;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .completion-stats {
   display: flex;
   flex-wrap: wrap;
