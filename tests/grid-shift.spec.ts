@@ -10,7 +10,7 @@ test('letter grid does not shift on first submit (desktop)', async ({ page }) =>
 
   await page.fill('#countryInput', 'Albania');
   await page.click('#submitCountry');
-  await page.waitForTimeout(700);
+  await expect(page.locator('#submittedList')).toContainText('Albania');
 
   const after = await page.locator('#letterGrid').boundingBox();
   const scrollAfter = await page.evaluate(() => window.scrollY);
@@ -30,7 +30,7 @@ test('letter grid does not shift on first submit (mobile)', async ({ page }) => 
 
   await page.fill('#countryInput', 'Albania');
   await page.click('#submitCountry');
-  await page.waitForTimeout(700);
+  await expect(page.locator('#submittedList')).toContainText('Albania');
 
   const after = await page.locator('#letterGrid').boundingBox();
   const scrollAfter = await page.evaluate(() => window.scrollY);

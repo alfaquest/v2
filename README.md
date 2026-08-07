@@ -68,8 +68,19 @@ export CLOUDFLARE_ACCOUNT_ID=...
 ## Tests
 
 ```bash
+npm ci
+npm run test:install-browsers
 npm test
 ```
+
+On Windows, if PowerShell blocks scripts use `npm.cmd` instead of `npm`.
+
+### If tests fail locally (but pass in GitHub Actions)
+
+1. **Stop any running dev server** — or ignore it: tests use port **4174** (`npm run serve` uses **4173**). If you changed ports, make sure nothing else is bound to 4174.
+2. **Install browsers** — run `npm run test:install-browsers` once after `npm ci`.
+3. **Clean install** — delete `node_modules`, then `npm ci` again.
+4. **View the HTML report** — after a failed run: `npx playwright show-report`
 
 ## CI notes
 
