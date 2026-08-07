@@ -1161,9 +1161,11 @@ function updateUI(){
           } else if (unusedForLetter.length === 0){
             reason = 'Every country beginning with "' + letter + '" has already been submitted.';
           } else {
-            reason = (isAlfa || isNormal)
-              ? 'No remaining country beginning with "' + letter + '" can continue the chain from here.'
-              : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.';
+            reason = isNormal
+              ? 'No remaining country beginning with "' + letter + '" can add a new letter to your collection.'
+              : (isAlfa
+                ? 'No remaining country beginning with "' + letter + '" can continue the chain from here.'
+                : 'All remaining countries beginning with "' + letter + '" contain only letters already collected.');
           }
           const helper = buildGameOverExampleCountries(req, submitted, unusedForLetter);
           renderGameOverSummary({
@@ -1448,7 +1450,7 @@ function getRequiredLetterContext(submittedList){
   }
 
   const alpha = GAME_ALPH.slice();
-  const usedStarts = IGNORED.slice();
+  const usedStartLetters = IGNORED.slice();
   let prevCommon = null;
   let sourceWordNormalized = '';
 
@@ -1456,8 +1458,8 @@ function getRequiredLetterContext(submittedList){
     const w = normalize(submittedList[i]);
     if (!w) return null;
     const start = w.charAt(0);
-    if (usedStarts.indexOf(start) !== -1) return null;
-    usedStarts.push(start);
+    if (usedStartLetters.indexOf(start) !== -1) return null;
+    usedStartLetters.push(start);
     for (let k = alpha.length - 1; k >= 0; k--) {
       if (alpha[k] === start) alpha.splice(k, 1);
     }
@@ -1476,10 +1478,19 @@ function getRequiredLetterContext(submittedList){
 
   if (!prevCommon || !sourceWordNormalized) return null;
   const displayName = formatDisplayCountry(sourceWordNormalized);
+  let explanation = 'From ' + displayName + ', ' + prevCommon.toUpperCase() +
+    ' is the first unused starting letter in that word.';
+  if (isNormalAlfafillMode()) {
+    if (usedLetters.has(prevCommon) && !usedStarts.has(prevCommon)) {
+      explanation = 'From ' + displayName + ', the next answer must start with ' + prevCommon.toUpperCase() +
+        '. That letter is already on your grid from letters collected inside country names, but it has not been used as a starting letter yet.';
+    } else {
+      explanation += ' Collected letters inside country names are separate from starting letters.';
+    }
+  }
   return {
     required: prevCommon,
-    explanation: 'From ' + displayName + ', ' + prevCommon.toUpperCase() +
-      ' is the first unused starting letter in that word.'
+    explanation
   };
 }
 
@@ -1507,8 +1518,11 @@ function renderLetterGrid(){
       else if (ch === required) classes.push('next-required');
       else classes.push('available');
     } else if (isNormal || isSeq || isSeqFull){
-      if (isNormal && ch === required) classes.push('next-required');
-      else if (usedLetters.has(ch)) classes.push('used');
+      const isRequiredStart = isNormal && ch === required;
+      const isCollected = usedLetters.has(ch);
+      if (isRequiredStart && isCollected) classes.push('next-required', 'required-start-collected');
+      else if (isRequiredStart) classes.push('next-required');
+      else if (isCollected) classes.push('used');
       else if (ch === required) classes.push('next-required');
       else classes.push('available');
     } else {
@@ -1594,11 +1608,20 @@ function addCountryLocal(name){
       scrollSubmittedListIntoView();
 
       markGameOver();
+      const displayName = formatDisplayCountry(n);
+      renderGameOverSummary({
+        required: n.charAt(0),
+        displayRequired: n.charAt(0),
+        reason: '"' + displayName + '" does not add any new letters to your collection. In Normal mode, that ends the run.',
+        examples: [],
+        exampleLabel: ''
+      });
+      renderSessionInfo(null);
       const submitBtn = document.getElementById('submitCountry');
       const input = document.getElementById('countryInput');
       if (submitBtn) submitBtn.disabled = true;
       if (input) input.disabled = true;
-      showGameOverResetToast({ detail: 'Game over' });
+      showGameOverResetToast({ summaryShown: true });
       return;
     }
   } else if (isEasyFill) {
