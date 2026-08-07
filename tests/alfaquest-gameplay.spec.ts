@@ -136,6 +136,16 @@ test.describe('Alfaquest gameplay', () => {
     await expect(page.locator('#submitCountry')).toBeDisabled();
     await expect(page.locator('#countryInput')).toBeDisabled();
     await expect(page.locator('#remainingLetters')).not.toHaveText('0');
+    await expect(page.locator('#gameOverSummary .game-over-modes')).toContainText(/Alfaquest Fill/i);
+    await expect(page.locator('#gameOverSummary .game-over-modes a[href="alfafillnormal.html"]')).toBeVisible();
+  });
+
+  test('instructions link to easier Alfaquest modes', async ({ page }) => {
+    await page.goto('/alfaquest.html');
+    await page.locator('.game-instructions summary').click();
+    await expect(page.locator('.game-instructions-body')).toContainText(/Alfaquest Fill/i);
+    await expect(page.locator('.game-instructions-body a[href="alfafillnormal.html"]')).toBeVisible();
+    await expect(page.locator('.game-instructions-body a[href="alfafilleasy.html"]')).toBeVisible();
   });
 
   test('reset highlight clears after game over reset', async ({ page }) => {
