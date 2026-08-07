@@ -284,6 +284,36 @@ body.game-page {
   color: var(--game-muted);
 }
 
+.game-page button.ghost.reset-required {
+  color: #ffe4e6;
+  border-color: rgba(255, 92, 108, 0.9);
+  background: rgba(255, 92, 108, 0.18);
+  animation: resetRequiredPulse 1.35s ease-in-out infinite;
+}
+
+@keyframes resetRequiredPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 92, 108, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 18px 4px rgba(255, 92, 108, 0.42);
+    border-color: #ff8a98;
+    background: rgba(255, 92, 108, 0.32);
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-page button.ghost.reset-required {
+    animation: none;
+    border-color: #ff8a98;
+    background: rgba(255, 92, 108, 0.28);
+    box-shadow: 0 0 14px rgba(255, 92, 108, 0.35);
+  }
+}
+
 .game-page .progress {
   height: 10px;
   background: rgba(255, 255, 255, 0.05);

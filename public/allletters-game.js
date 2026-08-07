@@ -558,6 +558,23 @@ function markGameOver(){
   lockRunEndTime();
   currentEntryStartedAtMs = null;
   syncLiveScoreTimer();
+  highlightResetRequired();
+}
+
+function highlightResetRequired(){
+  if (typeof document === 'undefined') return;
+  const resetBtn = document.getElementById('resetLocal');
+  if (!resetBtn) return;
+  resetBtn.classList.add('reset-required');
+  resetBtn.setAttribute('aria-label', 'Reset game to play again');
+}
+
+function clearResetHighlight(){
+  if (typeof document === 'undefined') return;
+  const resetBtn = document.getElementById('resetLocal');
+  if (!resetBtn) return;
+  resetBtn.classList.remove('reset-required');
+  resetBtn.removeAttribute('aria-label');
 }
 
 function getTargetSeconds(moveCount){
@@ -1142,6 +1159,7 @@ function updateUI(){
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
         gameOver = false;
         hideGameOverSummary();
+        clearResetHighlight();
         if (submitBtn) submitBtn.disabled = false;
         if (input) input.disabled = false;
       }
@@ -1193,6 +1211,7 @@ function updateUI(){
       } else {
         if (statusEl){ statusEl.textContent = ''; statusEl.className = ''; }
         gameOver = false;
+        clearResetHighlight();
         if (submitBtn) submitBtn.disabled = false;
         if (input) input.disabled = false;
       }
@@ -1697,6 +1716,7 @@ function resetLocal(){
   gameOver = false;
   hideGameOverSummary();
   hideCompletionSummary();
+  clearResetHighlight();
   // restore ignored starts (w,x) and recompute from empty submitted
   recomputeUsedStarts();
   // re-enable inputs
@@ -1748,6 +1768,10 @@ window.addEventListener('load', ()=>{
   });
   const resetBtn = document.getElementById('resetLocal');
   if (resetBtn) resetBtn.addEventListener('click', ()=>{
+    if (gameOver) {
+      resetLocal();
+      return;
+    }
     showToast('Reset game? Tap here to confirm.', 'info', 0, () => resetLocal());
     const dismissOnOutsideClick = (e) => {
       const toast = document.getElementById('alfa-toast');
