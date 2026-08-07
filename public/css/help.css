@@ -1,0 +1,178 @@
+/* Alfaquest help / tutorial pages — mobile-first, matches game-shell tokens */
+
+.help-page {
+  padding: 16px 16px 28px;
+}
+
+.help-shell {
+  max-width: 720px;
+}
+
+.help-header {
+  margin-bottom: 16px;
+}
+
+.help-header h1 {
+  margin: 10px 0 0;
+  font-weight: 700;
+  font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--game-heading);
+  text-shadow: 0 2px 0 #17346c, 0 4px 0 #10274f, 0 8px 14px rgba(0, 0, 0, 0.35);
+}
+
+.help-lead {
+  margin: 0 0 16px;
+  color: var(--game-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.help-card {
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+.help-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--game-accent-soft);
+}
+
+.help-card p,
+.help-card li {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--game-text);
+}
+
+.help-card p:last-child,
+.help-card ul:last-child {
+  margin-bottom: 0;
+}
+
+.help-card ul {
+  margin: 0 0 12px;
+  padding-left: 1.2rem;
+}
+
+.help-card a {
+  color: var(--game-accent-soft);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.help-card a:hover {
+  text-decoration: underline;
+}
+
+.help-example {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.help-example-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--game-muted);
+}
+
+.help-example ol {
+  margin: 0;
+  padding-left: 1.35rem;
+}
+
+.help-example li {
+  margin: 0 0 4px;
+  padding-left: 2px;
+}
+
+.help-example--fail {
+  border-color: rgba(255, 92, 108, 0.35);
+  background: rgba(255, 92, 108, 0.08);
+}
+
+.help-example--success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.help-tip {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 3px solid var(--game-accent);
+  background: rgba(0, 163, 255, 0.08);
+  color: #d7eeff;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.help-tip em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.help-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #183a87, #0f2459 58%, #0a183f);
+  color: #f4fbff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border: 1px solid rgba(149, 205, 255, 0.55);
+  box-shadow: 0 8px 18px rgba(7, 14, 45, 0.4);
+}
+
+.help-actions a:hover {
+  filter: brightness(1.06);
+}
+
+.help-actions a.ghost {
+  background: transparent;
+  color: var(--game-accent-soft);
+  border-color: rgba(125, 211, 252, 0.35);
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .help-page {
+    padding: 12px 12px 24px;
+  }
+
+  .help-card {
+    padding: 14px;
+  }
+
+  .help-example {
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+}
