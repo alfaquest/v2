@@ -33,5 +33,6 @@ test.describe('Homepage regression', () => {
     await expect(facebookLink).toBeVisible();
     await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaquest0');
     await expect(facebookLink).toHaveAttribute('target', '_blank');
+    await expect(facebookLink.locator('.site-social-icon')).toBeVisible();
   });
 });
