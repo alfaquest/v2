@@ -26,4 +26,12 @@ test.describe('Homepage regression', () => {
     await expect(page.getByRole('link', { name: /Play Alfaquest Easy/i })).toHaveAttribute('href', 'alfafilleasy.html');
     await expect(page.getByRole('link', { name: /Play Alfaquest Strict/i })).toHaveAttribute('href', 'alfafillhard.html');
   });
+
+  test('shows Facebook follow link', async ({ page }) => {
+    await page.goto('/');
+    const facebookLink = page.getByRole('link', { name: /Follow on Facebook/i });
+    await expect(facebookLink).toBeVisible();
+    await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaword.games');
+    await expect(facebookLink).toHaveAttribute('target', '_blank');
+  });
 });

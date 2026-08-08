@@ -52,5 +52,12 @@ for (const { path, heading } of gamePages) {
       });
       expect(columnCount).toBe(6);
     });
+
+    test('shows Facebook follow link', async ({ page }) => {
+      await page.goto(path);
+      const facebookLink = page.getByRole('link', { name: /Follow on Facebook/i });
+      await expect(facebookLink).toBeVisible();
+      await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaword.games');
+    });
   });
 }
