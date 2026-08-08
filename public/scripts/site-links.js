@@ -1,5 +1,5 @@
 (function () {
-  var FACEBOOK_URL = 'https://www.facebook.com/alfaword.games';
+  var FACEBOOK_URL = 'https://www.facebook.com/alfaquest0';
 
   function facebookLinkHtml() {
     return '<a class="site-social-link site-social-link--facebook" href="' + FACEBOOK_URL +

@@ -31,7 +31,7 @@ test.describe('Homepage regression', () => {
     await page.goto('/');
     const facebookLink = page.getByRole('link', { name: /Follow on Facebook/i });
     await expect(facebookLink).toBeVisible();
-    await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaword.games');
+    await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaquest0');
     await expect(facebookLink).toHaveAttribute('target', '_blank');
   });
 });

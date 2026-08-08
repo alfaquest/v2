@@ -57,7 +57,7 @@ for (const { path, heading } of gamePages) {
       await page.goto(path);
       const facebookLink = page.getByRole('link', { name: /Follow on Facebook/i });
       await expect(facebookLink).toBeVisible();
-      await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaword.games');
+      await expect(facebookLink).toHaveAttribute('href', 'https://www.facebook.com/alfaquest0');
     });
   });
 }
