@@ -503,6 +503,9 @@ body.game-page {
 }
 
 .site-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--game-accent-soft);
   text-decoration: none;
   font-weight: 600;
@@ -511,6 +514,12 @@ body.game-page {
 
 .site-social-link:hover {
   text-decoration: underline;
+}
+
+.site-social-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .site-footer {
